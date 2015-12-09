@@ -22,22 +22,29 @@
 using namespace std;
 using namespace popl;
 
+
 int main (int argc, char **argv)
 {
 	OptionParser op("Allowed options");
 	std::string version, list;
 	int help;
+	bool b;
 
-	Value<int> v1("h", "help", "produce help message");
+	Value<int> v1("h", "help", "produce help message", 4, help);
 	Value<string> v2("l", "", "list pcm devices");
 	Value<string> v3("", "version", "show version number");
 //	Value<int> v4("", "12345678", "test of a long option name");
 	Value<int> v4("", "1234567890123456789012345678", "test of a long option name");
 //	Value<int> v4("", "1234567890123456789012345678901234567890", "test of a long option name");
 	Value<float> v5("f", "float", "transport codec [flac|ogg|pcm][:options]\nType codec:? to get codec specific options");
-	op.add(v1.assignTo(help)).add(v2.assignTo(list)).add(v3.setDefault("xxx").assignTo(version)).add(v4).add(v5);//.assignTo(help));
-//		.add(Value<std::string>("v", "version", &version, "show version number"))
-//		.add(Value<std::string>("", "list", &list, "list pcm devices"));
+	Switch s1("s", "switch", "switch test", b);
+
+	op.add(v1)
+	  .add(v2.assignTo(list))
+	  .add(v3.setDefault("xxx").assignTo(version))
+	  .add(v4)
+	  .add(v5)
+	  .add(s1);
 
 	op.parse(argc, argv);
 	cout << "\n\nop:\n" << op << "\n\n";
@@ -45,6 +52,7 @@ int main (int argc, char **argv)
 	cout << "Help: " << help << ", value: " << v1.getValue() << ", count: " << v1.count() << "\n"
 		<< "Version: " << version << ", value: " << v3.getValue() << "\n"
 		<< "Float: " << v5.getValue() << "\n"
-		<< "List: " << list << "\n";
+		<< "List: " << list << "\n"
+		<< "switch: " << s1.getValue() << ", b: " << b << "\n";
 }
 
