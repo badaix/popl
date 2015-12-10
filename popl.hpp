@@ -93,8 +93,8 @@ public:
 protected:
 	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
-	virtual void update();
 	virtual int hasArg() const;
+	virtual void update();
 	T* assignTo_;
 	T value_;
 	bool hasDefault_;
@@ -113,10 +113,10 @@ public:
 	Value<T>& assignTo(T* var);
 
 protected:
-	Value<T>& setDefault(const T& value);
 	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
+	Value<T>& setDefault(const T& value);
 };
 
 
@@ -129,10 +129,10 @@ public:
 	Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool* assignTo);
 
 protected:
-	Switch& setDefault(const bool& value);
 	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
+	Switch& setDefault(const bool& value);
 };
 
 
