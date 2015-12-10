@@ -3,7 +3,7 @@ TARGET  = popl
 SHELL = /bin/bash
 
 CXX     = /usr/bin/g++
-CFLAGS  = -Wall -O3 -DVERSION=\"$(VERSION)\"
+CFLAGS  = -Wall -O3 -DVERSION=\"$(VERSION)\" -Iinclude
 
 OBJ = test.o
 BIN = popl
