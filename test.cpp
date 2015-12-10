@@ -27,7 +27,7 @@ int main (int argc, char **argv)
 {
 	OptionParser op("Allowed options");
 	std::string version, list;
-	int help;
+	int help, i;
 	bool b;
 
 	Value<int> v1("h", "help", "produce help message", 4, help);
@@ -38,13 +38,15 @@ int main (int argc, char **argv)
 //	Value<int> v4("", "1234567890123456789012345678901234567890", "test of a long option name");
 	Value<float> v5("f", "float", "transport codec [flac|ogg|pcm][:options]\nType codec:? to get codec specific options");
 	Switch s1("s", "switch", "switch test", b);
+	Implicit<int> i1("i", "implicit", "implicit test", 5, i);
 
 	op.add(v1)
 	  .add(v2.assignTo(list))
 	  .add(v3.setDefault("xxx").assignTo(version))
 	  .add(v4)
 	  .add(v5)
-	  .add(s1);
+	  .add(s1)
+	  .add(i1);
 
 	op.parse(argc, argv);
 	cout << "\n\nop:\n" << op << "\n\n";
@@ -53,6 +55,7 @@ int main (int argc, char **argv)
 		<< "Version: " << version << ", value: " << v3.getValue() << "\n"
 		<< "Float: " << v5.getValue() << "\n"
 		<< "List: " << list << "\n"
-		<< "switch: " << s1.getValue() << ", b: " << b << "\n";
+		<< "switch: " << s1.getValue() << ", b: " << b << "\n"
+		<< "implicit: " << i1.getValue() << ", count: " << i1.count() << ", i: " << i << "\n";
 }
 
