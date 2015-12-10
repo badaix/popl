@@ -30,19 +30,19 @@ int main (int argc, char **argv)
 	int help, i;
 	bool b;
 
-	Value<int> v1("h", "help", "produce help message", 4, help);
+	Value<int> v1("h", "help", "produce help message", 4, &help);
 	Value<string> v2("l", "", "list pcm devices");
 	Value<string> v3("", "version", "show version number");
 //	Value<int> v4("", "12345678", "test of a long option name");
 	Value<int> v4("", "1234567890123456789012345678", "test of a long option name");
 //	Value<int> v4("", "1234567890123456789012345678901234567890", "test of a long option name");
 	Value<float> v5("f", "float", "transport codec [flac|ogg|pcm][:options]\nType codec:? to get codec specific options");
-	Switch s1("s", "switch", "switch test", b);
-	Implicit<int> i1("i", "implicit", "implicit test", 5, i);
+	Switch s1("s", "switch", "switch test", &b);
+	Implicit<int> i1("i", "implicit", "implicit test", 5, &i);
 
 	op.add(v1)
-	  .add(v2.assignTo(list))
-	  .add(v3.setDefault("xxx").assignTo(version))
+	  .add(v2.assignTo(&list))
+	  .add(v3.setDefault("xxx").assignTo(&version))
 	  .add(v4)
 	  .add(v5)
 	  .add(s1)
@@ -55,7 +55,14 @@ int main (int argc, char **argv)
 		<< "Version: " << version << ", value: " << v3.getValue() << "\n"
 		<< "Float: " << v5.getValue() << "\n"
 		<< "List: " << list << "\n"
-		<< "switch: " << s1.getValue() << ", b: " << b << "\n"
+		<< "switch: " << s1.getValue() << ", b: " << b << ", isSet: " << s1.isSet() << "\n"
 		<< "implicit: " << i1.getValue() << ", count: " << i1.count() << ", i: " << i << "\n";
+
+	for (size_t n=0; n<op.nonOptionArgs().size(); ++n)
+		cout << "NonOptionArg: " << op.nonOptionArgs()[n] << "\n";
+
+	for (size_t n=0; n<op.unknownOptions().size(); ++n)
+		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
 }
+
 

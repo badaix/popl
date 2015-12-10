@@ -61,10 +61,10 @@ public:
 	std::string getLongOption() const;
 	std::string getDescription() const;
 	unsigned int count() const;
-
+	bool isSet() const;
 
 protected:
-	virtual void parse(const char* value) = 0;
+	virtual void parse(const std::string& whatOption, const char* value) = 0;
 	virtual void update();
 	virtual std::string optionToString() const;
 	virtual std::vector<std::string> descriptionToString(size_t width = 40) const;
@@ -84,14 +84,14 @@ class Value : public Option
 {
 public:
 	Value(const std::string& shortOption, const std::string& longOption, const std::string& description);
-	Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal);
-	Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal, T& assignTo);
-	Value<T>& assignTo(T& var);
+	Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal, T* assignTo = NULL);
+
+	Value<T>& assignTo(T* var);
 	Value<T>& setDefault(const T& value);
 	T getValue() const;
 
 protected:
-	virtual void parse(const char* value);
+	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual void update();
 	virtual int hasArg() const;
@@ -108,12 +108,13 @@ class Implicit : public Value<T>
 {
 public:
 	Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal);
-	Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal, T& assignTo);
-	Value<T>& assignTo(T& var);
+	Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal, T* assignTo = NULL);
+
+	Value<T>& assignTo(T* var);
 
 protected:
 	Value<T>& setDefault(const T& value);
-	virtual void parse(const char* value);
+	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
 };
@@ -125,11 +126,11 @@ class Switch : public Value<bool>
 {
 public:
 	Switch(const std::string& shortOption, const std::string& longOption, const std::string& description);
-	Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool& assignTo);
+	Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool* assignTo);
 
 protected:
 	Switch& setDefault(const bool& value);
-	virtual void parse(const char* value);
+	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
 };
@@ -146,13 +147,14 @@ public:
 	OptionParser& add(Option* option);
 	void parse(int argc, char **argv);
 	std::string help() const;
-//TODO
-//non options
-//unknown options
+	const std::vector<std::string>& nonOptionArgs() const;
+	const std::vector<std::string>& unknownOptions() const;
 
 protected:
 	std::vector<Option*> options_;
 	std::string description_;
+	std::vector<std::string> nonOptionArgs_;
+	std::vector<std::string> unknownOptions_;
 };
 
 
@@ -201,6 +203,12 @@ unsigned int Option::count() const
 }
 
 
+bool Option::isSet() const
+{
+	return (count_ > 0);
+}
+
+
 std::string Option::optionToString() const
 {
 	std::stringstream line;
@@ -238,30 +246,30 @@ std::vector<std::string> Option::descriptionToString(size_t width) const
 /// Value implementation /////////////////////////////////
 
 template<class T>
-Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description) : Option(shortOption, longOption, description), assignTo_(NULL), hasDefault_(false)
+Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description) :
+	Option(shortOption, longOption, description),
+	assignTo_(NULL),
+	hasDefault_(false)
 {
 	update();
 }
 
 
 template<class T>
-Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal) : Option(shortOption, longOption, description), assignTo_(NULL), value_(defaultVal), hasDefault_(true)
+Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal, T* assignTo) :
+	Option(shortOption, longOption, description),
+	assignTo_(assignTo),
+	value_(defaultVal),
+	hasDefault_(true)
 {
 	update();
 }
 
 
 template<class T>
-Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal, T& assignTo) : Option(shortOption, longOption, description), assignTo_(&assignTo), value_(defaultVal), hasDefault_(true)
+Value<T>& Value<T>::assignTo(T* var)
 {
-	update();
-}
-
-
-template<class T>
-Value<T>& Value<T>::assignTo(T& var)
-{
-	assignTo_ = &var;
+	assignTo_ = var;
 	return *this;
 }
 
@@ -298,7 +306,7 @@ int Value<T>::hasArg() const
 
 
 template<>
-void Value<std::string>::parse(const char* value)
+void Value<std::string>::parse(const std::string& whatOption, const char* value)
 {
 	value_ = value;
 	update();
@@ -306,7 +314,7 @@ void Value<std::string>::parse(const char* value)
 
 
 template<class T>
-void Value<T>::parse(const char* value)
+void Value<T>::parse(const std::string& whatOption, const char* value)
 {
 	std::string strValue;
 	if (value != NULL)
@@ -326,23 +334,14 @@ void Value<T>::parse(const char* value)
 
 	update();
 
-	if (is.fail() || (valuesRead > 1) || strValue.empty())
-	{
-		std::stringstream option;
-		if (getShortOption() != 0)
-			option << "-" << getShortOption();
-		else
-			option << "--" << getLongOption();
+	if (is.fail())
+		throw std::invalid_argument("invalid argument for " + whatOption + ": '" + strValue + "'");
 
-		if (is.fail())
-			throw std::invalid_argument("invalid argument for " + option.str() + ": '" + strValue + "'");
+	if (valuesRead > 1)
+		throw std::invalid_argument("too many arguments for " + whatOption + ": '" + strValue + "'");
 
-		if (valuesRead > 1)
-			throw std::invalid_argument("too many arguments for " + option.str() + ": '" + strValue + "'");
-
-		if (strValue.empty())
-			throw std::invalid_argument("missing argument for " + option.str());
-	}
+	if (strValue.empty())
+		throw std::invalid_argument("missing argument for " + whatOption);
 }
 
 
@@ -363,16 +362,16 @@ std::string Value<T>::optionToString() const
 /// Implicit implementation /////////////////////////////////
 
 template<class T>
-Implicit<T>::Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal) : Value<T>(shortOption, longOption, description, implicitVal)
+Implicit<T>::Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal) :
+	Value<T>(shortOption, longOption, description, implicitVal)
 {
-	this->update();
 }
 
 
 template<class T>
-Implicit<T>::Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal, T& assignTo) : Value<T>(shortOption, longOption, description, implicitVal, assignTo)
+Implicit<T>::Implicit(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& implicitVal, T* assignTo) :
+	Value<T>(shortOption, longOption, description, implicitVal, assignTo)
 {
-	this->update();
 }
 
 
@@ -384,10 +383,10 @@ int Implicit<T>::hasArg() const
 
 
 template<class T>
-void Implicit<T>::parse(const char* value)
+void Implicit<T>::parse(const std::string& whatOption, const char* value)
 {
 	if (value != NULL)
-		Value<T>::parse(value);
+		Value<T>::parse(whatOption, value);
 	else
 		this->update();
 }
@@ -407,19 +406,21 @@ std::string Implicit<T>::optionToString() const
 
 /// Switch implementation /////////////////////////////////
 
-Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description) : Value<bool>(shortOption, longOption, description, false)
+Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description) :
+	Value<bool>(shortOption, longOption, description, false)
 {
 	update();
 }
 
 
-Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool& assignTo) : Value<bool>(shortOption, longOption, description, false, assignTo)
+Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool* assignTo) :
+	Value<bool>(shortOption, longOption, description, false, assignTo)
 {
 	update();
 }
 
 
-void Switch::parse(const char* value)
+void Switch::parse(const std::string& whatOption, const char* value)
 {
 	value_ = true;
 	update();
@@ -457,6 +458,18 @@ OptionParser& OptionParser::add(Option& option)
 {
 	options_.push_back(&option);
 	return *this;
+}
+
+
+const std::vector<std::string>& OptionParser::nonOptionArgs() const
+{
+	return nonOptionArgs_;
+}
+
+
+const std::vector<std::string>& OptionParser::unknownOptions() const
+{
+	return unknownOptions_;
 }
 
 
@@ -500,6 +513,9 @@ std::string OptionParser::help() const
 
 void OptionParser::parse(int argc, char **argv)
 {
+	unknownOptions_.clear();
+	nonOptionArgs_.clear();
+	
 	std::vector<option> long_options;
 	std::stringstream short_options;
 	opterr = 0;
@@ -535,6 +551,7 @@ void OptionParser::parse(int argc, char **argv)
 			break;
 
 		Option* option(NULL);
+		/// long options
 		if (c == 0)
 		{
 			for (size_t opt = 0; opt < options_.size(); ++opt)
@@ -546,9 +563,9 @@ void OptionParser::parse(int argc, char **argv)
 				}
 			}
 		}
+		/// short options
 		else if (c != '?')
 		{
-//std::cout << c << ", " << (char)c << "\n";
 			for (size_t opt = 0; opt < options_.size(); ++opt)
 			{
 				if (options_[opt]->getShortOption() == c)
@@ -558,25 +575,25 @@ void OptionParser::parse(int argc, char **argv)
 				}
 			}
 		}
+		/// unknown option
 		else // ?
 		{
-std::cout << "unknown: " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
+//			std::cout << "unknown: " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
+			unknownOptions_.push_back(argv[curind]);
 		}
 
 		if (option != NULL)
 		{
 			++option->count_;
-//			std::cout << option->getDescription() << ": " << optarg << "\n";
-			option->parse(optarg);
+			option->parse(argv[curind], optarg);
 		}
 	}
 
+	/// non option args
 	if (optind < argc)
 	{
-		std::cout << "non-option ARGV-elements: ";
 		while (optind < argc)
-			std::cout << argv[optind++] << " ";
-		std::cout << "\n";
+			nonOptionArgs_.push_back(argv[optind++]);
 	}
 }
 
