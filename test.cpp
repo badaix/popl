@@ -38,6 +38,8 @@ int main (int argc, char **argv)
 //	Value<int> v4("", "1234567890123456789012345678901234567890", "test of a long option name");
 	Value<float> v5("f", "float", "transport codec [flac|ogg|pcm][:options]\nType codec:? to get codec specific options");
 	Switch s1("s", "switch", "switch test", &b);
+//	Switch s2("s", "switch", "switch test", &b);
+	Switch s2("", "", "switch test", &b);
 	Implicit<int> i1("i", "implicit", "implicit test", 5, &i);
 
 	op.add(v1)
@@ -46,6 +48,7 @@ int main (int argc, char **argv)
 	  .add(v4)
 	  .add(v5)
 	  .add(s1)
+//	  .add(s2)
 	  .add(i1);
 
 	op.parse(argc, argv);

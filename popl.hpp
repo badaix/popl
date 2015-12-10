@@ -144,7 +144,6 @@ public:
 	OptionParser(const std::string& description = "");
 	virtual ~OptionParser();
 	OptionParser& add(Option& option);
-	OptionParser& add(Option* option);
 	void parse(int argc, char **argv);
 	std::string help() const;
 	const std::vector<std::string>& nonOptionArgs() const;
@@ -169,6 +168,11 @@ Option::Option(const std::string& shortOption, const std::string& longOption, co
 	description_(description),
 	count_(0)
 {
+	if (shortOption.size() > 1)
+		throw std::invalid_argument("length of short option must be <= 1: '" + shortOption + "'");
+
+	if (shortOption.empty() && longOption.empty())
+		throw std::invalid_argument("short and long option are empty");
 }
 
 
@@ -456,6 +460,13 @@ OptionParser::~OptionParser()
 
 OptionParser& OptionParser::add(Option& option)
 {
+	for (size_t n=0; n<options_.size(); ++n)
+	{
+		if ((option.getShortOption() != 0) && (option.getShortOption() == options_[n]->getShortOption()))
+			throw std::invalid_argument("dublicate short option '-" + std::string(1, option.getShortOption()) + "'");
+		if (!option.getLongOption().empty() && (option.getLongOption() == (options_[n]->getLongOption())))
+			throw std::invalid_argument("dublicate long option '--" + option.getLongOption() + "'");
+	}
 	options_.push_back(&option);
 	return *this;
 }
@@ -515,7 +526,7 @@ void OptionParser::parse(int argc, char **argv)
 {
 	unknownOptions_.clear();
 	nonOptionArgs_.clear();
-	
+
 	std::vector<option> long_options;
 	std::stringstream short_options;
 	opterr = 0;
