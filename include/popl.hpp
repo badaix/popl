@@ -359,7 +359,7 @@ std::string Value<T>::optionToString() const
 		std::stringstream defaultStr;
 		defaultStr << value_;
 		if (!defaultStr.str().empty())
-			ss << " (=" << defaultStr << ")";
+			ss << " (=" << value_ << ")";
 	}
 	return ss.str();
 }
