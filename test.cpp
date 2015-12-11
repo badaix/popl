@@ -41,7 +41,7 @@ int main (int argc, char **argv)
 	Value<int> intOptionDefault("", "intDefault", "test for int values with default", 42);
 	Value<int> intOptionDefaultAssign("", "intDefaultAssign", "test for int values with default\nAssign result to variable i", 42, &i);
 	Value<string> stringOption("s", "string", "test for string values");
-	Value<string> stringOptionAssign("", "stringAssign", "test for string values\nAssign result to variable s", "default string", &s);
+	Value<string> stringOptionAssign("", "stringAssign", "test for string values\nAssign result to variable s", "", &s);
 
 	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 5, &m);
 

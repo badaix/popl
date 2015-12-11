@@ -355,7 +355,12 @@ std::string Value<T>::optionToString() const
 	std::stringstream ss;
 	ss << Option::optionToString() << " arg";
 	if (hasDefault_)
-		ss << " (=" << value_ << ")";
+	{
+		std::stringstream defaultStr;
+		defaultStr << value_;
+		if (!defaultStr.str().empty())
+			ss << " (=" << defaultStr << ")";
+	}
 	return ss.str();
 }
 
