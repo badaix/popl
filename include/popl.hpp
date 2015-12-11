@@ -529,6 +529,7 @@ void OptionParser::parse(int argc, char **argv)
 
 	std::vector<option> long_options;
 	std::stringstream short_options;
+	short_options << ":";
 	opterr = 0;
 	for (size_t opt = 0; opt < options_.size(); ++opt)
 	{
@@ -575,7 +576,7 @@ void OptionParser::parse(int argc, char **argv)
 			}
 		}
 		/// short options
-		else if (c != '?')
+		else if ((c != '?') && (c != ':'))
 		{
 			for (size_t opt = 0; opt < options_.size(); ++opt)
 			{
@@ -587,10 +588,15 @@ void OptionParser::parse(int argc, char **argv)
 			}
 		}
 		/// unknown option
-		else // ?
+		else if (c == '?')
 		{
-//			std::cout << "unknown: " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
+//			std::cout << "unknown(?): " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
 			unknownOptions_.push_back(argv[curind]);
+		}
+		/// missing argument
+		else if (c == ':')
+		{
+			throw std::invalid_argument("missing argument for " + std::string(argv[curind]));
 		}
 
 		if (option != NULL)
