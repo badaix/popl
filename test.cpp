@@ -17,7 +17,6 @@
 ***/
 
 #include "popl.hpp"
-#include <string>
 
 using namespace std;
 using namespace popl;
@@ -25,7 +24,40 @@ using namespace popl;
 
 int main (int argc, char **argv)
 {
+	float f;
+	int m;
+
+	Switch helpOption("h", "help", "produce help message");
+	Value<float> floatOption("f", "float", "test for float values", 1.23, &f);
+	Value<string> stringOption("s", "string", "test for string values");
+	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 42, &m);
+
 	OptionParser op("Allowed options");
+	op.add(helpOption)
+	.add(floatOption)
+	.add(stringOption)
+	.add(implicitIntOption);
+
+	op.parse(argc, argv);
+
+	for (size_t n=0; n<op.nonOptionArgs().size(); ++n)
+		cout << "NonOptionArg: " << op.nonOptionArgs()[n] << "\n";
+
+	for (size_t n=0; n<op.unknownOptions().size(); ++n)
+		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
+
+	cout << "floatOption: " << floatOption.getValue() << ", " << f << "\n";
+	cout << "stringOption: " << stringOption.getValue() << "\n";
+	cout << "implicitIntOption isSet: " << implicitIntOption.isSet() << ", " << m << ", " << implicitIntOption.getValue() << "\n";
+
+	if (helpOption.isSet())
+	{
+		cout << op << "\n";
+		return 0;
+	}
+
+
+/*	OptionParser op("Allowed options");
 	std::string s;
 	int i, m;
 	bool version;
@@ -86,6 +118,7 @@ int main (int argc, char **argv)
 
 	for (size_t n=0; n<op.unknownOptions().size(); ++n)
 		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
+*/
 }
 
 

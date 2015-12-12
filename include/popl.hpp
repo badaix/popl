@@ -28,28 +28,12 @@
 #include <cstdio>
 #include <stdexcept>
 
-/*
-Allowed options:
-  -h [ --help ]                         produce help message
-  -v [ --version ]                      show version number
-  -p [ --port ] arg (=1704)             server port
-  --controlPort arg (=1705)             Remote control port
-  -s [ --sampleformat ] arg (=44100:16:2)
-                                        sample format
-  -c [ --codec ] arg (=flac)            transport codec [flac|ogg|pcm][:options
-                                        ]. Type codec:? to get codec specific
-                                        options
-  -f [ --fifo ] arg (=/tmp/snapfifo)    name of the input fifo file
-  -d [ --daemon ] [=arg(=-3)]           daemonize, optional process priority
-                                        [-20..19]
-  -b [ --buffer ] arg (=1000)           buffer [ms]
-  --pipeReadBuffer arg (=20)            pipe read buffer [ms]
-*/
 
 
 namespace popl
 {
 
+#define VERSION "0.9"
 
 class Option
 {
@@ -97,6 +81,7 @@ protected:
 	virtual void update();
 	T* assignTo_;
 	T value_;
+	T default_;
 	bool hasDefault_;
 };
 
@@ -146,6 +131,7 @@ public:
 	OptionParser& add(Option& option);
 	void parse(int argc, char **argv);
 	std::string help() const;
+	const std::vector<Option*>& options() const;
 	const std::vector<std::string>& nonOptionArgs() const;
 	const std::vector<std::string>& unknownOptions() const;
 
@@ -264,6 +250,7 @@ Value<T>::Value(const std::string& shortOption, const std::string& longOption, c
 	Option(shortOption, longOption, description),
 	assignTo_(assignTo),
 	value_(defaultVal),
+	default_(defaultVal),
 	hasDefault_(true)
 {
 	update();
@@ -282,6 +269,7 @@ template<class T>
 Value<T>& Value<T>::setDefault(const T& value)
 {
 	value_ = value;
+	default_ = value;
 	hasDefault_ = true;
 	return *this;
 }
@@ -357,9 +345,9 @@ std::string Value<T>::optionToString() const
 	if (hasDefault_)
 	{
 		std::stringstream defaultStr;
-		defaultStr << value_;
+		defaultStr << default_;
 		if (!defaultStr.str().empty())
-			ss << " (=" << value_ << ")";
+			ss << " (=" << default_ << ")";
 	}
 	return ss.str();
 }
@@ -405,7 +393,7 @@ template<class T>
 std::string Implicit<T>::optionToString() const
 {
 	std::stringstream ss;
-	ss << Option::optionToString() << " [=arg(=" << this->value_ << ")]";
+	ss << Option::optionToString() << " [=arg(=" << this->default_ << ")]";
 	return ss.str();
 }
 
@@ -418,21 +406,18 @@ std::string Implicit<T>::optionToString() const
 Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description) :
 	Value<bool>(shortOption, longOption, description, false)
 {
-	update();
 }
 
 
 Switch::Switch(const std::string& shortOption, const std::string& longOption, const std::string& description, bool* assignTo) :
 	Value<bool>(shortOption, longOption, description, false, assignTo)
 {
-	update();
 }
 
 
 void Switch::parse(const std::string& whatOption, const char* value)
 {
 	value_ = true;
-	update();
 }
 
 
@@ -474,6 +459,12 @@ OptionParser& OptionParser::add(Option& option)
 	}
 	options_.push_back(&option);
 	return *this;
+}
+
+
+const std::vector<Option*>& OptionParser::options() const
+{
+	return options_;
 }
 
 

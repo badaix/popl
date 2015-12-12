@@ -1,9 +1,8 @@
-VERSION = 0.0.1
 TARGET  = popl
 SHELL = /bin/bash
 
 CXX     = /usr/bin/g++
-CFLAGS  = -Wall -O3 -DVERSION=\"$(VERSION)\" -Iinclude
+CFLAGS  = -Wall -O3 -Iinclude
 
 OBJ = test.o
 BIN = popl
