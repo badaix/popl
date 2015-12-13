@@ -33,7 +33,7 @@
 namespace popl
 {
 
-#define VERSION "0.9"
+#define POPL_VERSION "0.9"
 
 class Option
 {
@@ -49,7 +49,7 @@ public:
 
 protected:
 	virtual void parse(const std::string& whatOption, const char* value) = 0;
-	virtual void update();
+	virtual void updateReference();
 	virtual std::string optionToString() const;
 	virtual std::vector<std::string> descriptionToString(size_t width = 40) const;
 	virtual int hasArg() const = 0;
@@ -78,7 +78,7 @@ protected:
 	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
-	virtual void update();
+	virtual void updateReference();
 	T* assignTo_;
 	T value_;
 	T default_;
@@ -162,7 +162,7 @@ Option::Option(const std::string& shortOption, const std::string& longOption, co
 }
 
 
-void Option::update()
+void Option::updateReference()
 {
 }
 
@@ -241,7 +241,7 @@ Value<T>::Value(const std::string& shortOption, const std::string& longOption, c
 	assignTo_(NULL),
 	hasDefault_(false)
 {
-	update();
+	updateReference();
 }
 
 
@@ -253,7 +253,7 @@ Value<T>::Value(const std::string& shortOption, const std::string& longOption, c
 	default_(defaultVal),
 	hasDefault_(true)
 {
-	update();
+	updateReference();
 }
 
 
@@ -276,7 +276,7 @@ Value<T>& Value<T>::setDefault(const T& value)
 
 
 template<class T>
-void Value<T>::update()
+void Value<T>::updateReference()
 {
 	if (assignTo_ != NULL)
 		*assignTo_ = value_;
@@ -301,7 +301,7 @@ template<>
 void Value<std::string>::parse(const std::string& whatOption, const char* value)
 {
 	value_ = value;
-	update();
+	updateReference();
 }
 
 
@@ -324,8 +324,6 @@ void Value<T>::parse(const std::string& whatOption, const char* value)
 		valuesRead++;
 	}
 
-	update();
-
 	if (is.fail())
 		throw std::invalid_argument("invalid argument for " + whatOption + ": '" + strValue + "'");
 
@@ -334,6 +332,8 @@ void Value<T>::parse(const std::string& whatOption, const char* value)
 
 	if (strValue.empty())
 		throw std::invalid_argument("missing argument for " + whatOption);
+
+	updateReference();
 }
 
 
@@ -385,7 +385,7 @@ void Implicit<T>::parse(const std::string& whatOption, const char* value)
 	if (value != NULL)
 		Value<T>::parse(whatOption, value);
 	else
-		this->update();
+		this->updateReference();
 }
 
 
@@ -418,6 +418,7 @@ Switch::Switch(const std::string& shortOption, const std::string& longOption, co
 void Switch::parse(const std::string& whatOption, const char* value)
 {
 	value_ = true;
+	updateReference();
 }
 
 
@@ -530,7 +531,7 @@ void OptionParser::parse(int argc, char **argv)
 	for (size_t opt = 0; opt < options_.size(); ++opt)
 	{
 		Option* option(options_[opt]);
-		option->update();
+		option->updateReference();
 		if (!option->getLongOption().empty())
 		{
 			::option o;

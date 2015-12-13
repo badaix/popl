@@ -22,42 +22,9 @@ using namespace std;
 using namespace popl;
 
 
-int main (int argc, char **argv)
+void test(int argc, char **argv)
 {
-	float f;
-	int m;
-
-	Switch helpOption("h", "help", "produce help message");
-	Value<float> floatOption("f", "float", "test for float values", 1.23, &f);
-	Value<string> stringOption("s", "string", "test for string values");
-	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 42, &m);
-
 	OptionParser op("Allowed options");
-	op.add(helpOption)
-	.add(floatOption)
-	.add(stringOption)
-	.add(implicitIntOption);
-
-	op.parse(argc, argv);
-
-	for (size_t n=0; n<op.nonOptionArgs().size(); ++n)
-		cout << "NonOptionArg: " << op.nonOptionArgs()[n] << "\n";
-
-	for (size_t n=0; n<op.unknownOptions().size(); ++n)
-		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
-
-	cout << "floatOption: " << floatOption.getValue() << ", " << f << "\n";
-	cout << "stringOption: " << stringOption.getValue() << "\n";
-	cout << "implicitIntOption isSet: " << implicitIntOption.isSet() << ", " << m << ", " << implicitIntOption.getValue() << "\n";
-
-	if (helpOption.isSet())
-	{
-		cout << op << "\n";
-		return 0;
-	}
-
-
-/*	OptionParser op("Allowed options");
 	std::string s;
 	int i, m;
 	bool version;
@@ -94,13 +61,13 @@ int main (int argc, char **argv)
 	if (helpSwitchOption.isSet())
 	{
 		cout << op << "\n";
-		return 0;
+		return;
 	}
 
 	if (version)
 	{
-		cout << VERSION << "\n";
-		return 0;
+		cout << POPL_VERSION << "\n";
+		return;
 	}
 
 	cout
@@ -118,7 +85,50 @@ int main (int argc, char **argv)
 
 	for (size_t n=0; n<op.unknownOptions().size(); ++n)
 		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
-*/
+}
+
+
+int main(int argc, char **argv)
+{
+	float f;
+	int m;
+	bool t;
+
+	Switch helpOption("h", "help", "produce help message");
+	Switch testOption("t", "test", "execute another test", &t);
+	Value<float> floatOption("f", "float", "test for float values", 1.23, &f);
+	Value<string> stringOption("s", "string", "test for string values");
+	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 42, &m);
+
+	OptionParser op("Allowed options");
+	op.add(helpOption)
+	.add(testOption)
+	.add(floatOption)
+	.add(stringOption)
+	.add(implicitIntOption);
+
+	op.parse(argc, argv);
+
+	// print auto-generated help message
+	if (helpOption.isSet())
+		cout << op << "\n";
+
+	// show all non option arguments (those without "-o" or "--option")
+	for (size_t n=0; n<op.nonOptionArgs().size(); ++n)
+		cout << "NonOptionArg: " << op.nonOptionArgs()[n] << "\n";
+
+	// show unknown options (undefined ones, like "-u" or "--undefined")
+	for (size_t n=0; n<op.unknownOptions().size(); ++n)
+		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
+
+	// print all the configured values
+	cout << "testOption - value: " << testOption.getValue() << ", isSet: " << testOption.isSet() << ", count: " << testOption.count() << ", reference: " << t << "\n";
+	cout << "floatOption - value: " << floatOption.getValue() << ", reference: " << f << "\n";
+	cout << "stringOption - value: " << stringOption.getValue() << "\n";
+	cout << "implicitIntOption - value: " << implicitIntOption.getValue() << ", isSet: " << implicitIntOption.isSet() << ", reference: " << m << "\n";
+
+	if (t)
+		test(argc, argv);
 }
 
 
