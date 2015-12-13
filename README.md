@@ -12,9 +12,9 @@ popl is a c++ wrapper around GNU's `getopt` and thus it closely follows the POSI
 Key objects are:
 * `Value<T>` Option with argument  
   `Value<int> intOption("i", "int", "configures an integer value", 42 /*optional: default*/, &i /*optional: assign value to i*/);`
-* `Swtich` Option without argument
+* `Swtich` Option without argument  
   `Switch helpOption("h", "help", "produce help message", &h /*optinal: assign bool to b*/);`
-* `Implicit<T>` Option with optional argument (using an implicit value if no argument is given)
+* `Implicit<T>` Option with optional argument (using an implicit value if no argument is given)  
   `Implicit<int> implicitIntOption("v", "verbose", "verbosity level", 2);`
 
 ## And why?
