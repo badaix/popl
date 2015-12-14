@@ -18,12 +18,12 @@ Key objects are:
   `Implicit<int> implicitIntOption("v", "verbose", "verbosity level", 2);`
 
 ## And why?
-There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using boost program options, which is event not a header only lib. And so a small tool has to be linked against boost system and boot program options.  
+There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using boost program options. Because it's not a header only lib, even a small tool has to be linked against boost system and boot program options.  
 I tried out two other libs that were recommended on stackoverflow. Both had their small flaws (from my point of view), and so I switched to `getopt`. Main drawbacks of `getopt` are:
 * Short and long argument of a single option are defined on two places
 * They (short and long option) are parsed on two different places
 * The result is a string and has to be casted to the target type
-* The obligatory help option has to implemented manually.  
+* The obligatory help option has to implemented manually  
 
 I started to work around these drawbacks and ended up with this popl library.
 
