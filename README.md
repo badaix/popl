@@ -6,7 +6,7 @@ popl is a c++ wrapper around GNU's `getopt` and thus it closely follows the POSI
 
 ## Features
 * Single header file implementation. Simply include and use it!
-* Supports the same set of options as GNU's 'getopt': short options, long options, non-option arguments, ...
+* Supports the same set of options as GNU's `getopt`: short options, long options, non-option arguments, ...
 * Templatized option parsing: arguments are directly casted into the desired target type
 
 Key objects are:
@@ -23,7 +23,8 @@ I tried out two other libs that were recommended on stackoverflow. Both had thei
 * Short and long argument of a single option are defined on two places
 * They (short and long option) are parsed on two different places
 * The result is a string and has to be casted to the target type
-* The obligatory help option has to implemented manually.
+* The obligatory help option has to implemented manually.  
+
 I started to work around these drawbacks and ended up with this popl library.
 
 ## Example
