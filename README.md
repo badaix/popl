@@ -8,6 +8,7 @@ popl is a c++ wrapper around GNU's `getopt` and thus it closely follows the POSI
 * Single header file implementation. Simply include and use it!
 * Supports the same set of options as GNU's `getopt`: short options, long options, non-option arguments, ...
 * Templatized option parsing: arguments are directly casted into the desired target type
+* Automatic creation of a usage message
 
 Key objects are:
 * `Value<T>` Option with argument  
@@ -18,7 +19,7 @@ Key objects are:
   `Implicit<int> implicitIntOption("v", "verbose", "verbosity level", 2);`
 
 ## And why?
-There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using boost program options. Because it's not a header only lib, even a small tool has to be linked against boost system and boot program options.  
+There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using boost program options. Since it's not a header only library, even a small tool has to be linked against boost system and boot program options.  
 I tried out two other libs that were recommended on stackoverflow. Both had their small flaws (from my point of view), and so I switched to `getopt`. Main drawbacks of `getopt` are:
 * Short and long argument of a single option are defined on two places
 * They (short and long option) are parsed on two different places
