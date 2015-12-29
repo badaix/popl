@@ -556,7 +556,7 @@ void OptionParser::parse(int argc, char **argv)
 		int option_index = 0;
 		int curind = optind;
 		char c = getopt_long(argc, argv, short_options.str().c_str(), &long_options[0], &option_index);
-		if (c == -1)
+		if ((c == -1) || (c == 255)) /// on Android 255 is returned
 			break;
 
 		Option* option(NULL);
