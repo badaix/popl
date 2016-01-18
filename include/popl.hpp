@@ -19,7 +19,14 @@
 #ifndef POPL_H
 #define POPL_H
 
+#define NOMINMAX
+
+#ifdef WIN32
+#include <getopt_win.h>
+#else
 #include <getopt.h>
+#endif
+
 #include <string.h>
 #include <vector>
 #include <iostream>
@@ -27,7 +34,7 @@
 #include <sstream>
 #include <cstdio>
 #include <stdexcept>
-
+#include <algorithm>
 
 
 namespace popl

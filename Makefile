@@ -4,7 +4,7 @@ SHELL = /bin/bash
 CXX     = /usr/bin/g++
 CFLAGS  = -Wall -O3 -Iinclude
 
-OBJ = test.o
+OBJ = PoplTest.o
 BIN = popl
 
 all:	$(TARGET)
