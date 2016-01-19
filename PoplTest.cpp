@@ -22,88 +22,21 @@ using namespace std;
 using namespace popl;
 
 
-void test(int argc, char **argv)
-{
-	OptionParser op("Allowed options");
-	std::string s;
-	int i, m;
-	bool version;
-
-	Switch helpSwitchOption("h", "help", "produce help message");
-	Switch versionSwitchOption("v", "version", "show version number", &version);
-
-	Value<int> longOption("", "1234567890123456789012345678901234567890", "test of a long option name");
-
-	Value<float> floatOption("f", "float", "test for float values");
-	Value<float> floatOptionDefault("", "floatDefault", "test for float values with default", 0.1);
-	Value<int> intOption("i", "int", "test for int values");
-	Value<int> intOptionDefault("", "intDefault", "test for int values with default", 42);
-	Value<int> intOptionDefaultAssign("", "intDefaultAssign", "test for int values with default\nAssign result to variable i", 42, &i);
-	Value<string> stringOption("s", "string", "test for string values");
-	Value<string> stringOptionAssign("", "stringAssign", "test for string values\nAssign result to variable s", "", &s);
-
-	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 5, &m);
-
-	op.add(helpSwitchOption)
-	  .add(versionSwitchOption)
-	  .add(longOption)
-	  .add(floatOption)
-	  .add(floatOptionDefault)
-	  .add(intOption)
-	  .add(intOptionDefault)
-	  .add(intOptionDefaultAssign)
-	  .add(stringOption)
-	  .add(stringOptionAssign)
-	  .add(implicitIntOption);
-
-	op.parse(argc, argv);
-
-	if (helpSwitchOption.isSet())
-	{
-		cout << op << "\n";
-		return;
-	}
-
-	if (version)
-	{
-		cout << POPL_VERSION << "\n";
-		return;
-	}
-
-	cout
-		<< "floatOption        isSet: " << floatOption.isSet() << ", value: " << floatOption.getValue() << "\n"
-		<< "floatOptionDefault isSet: " << floatOptionDefault.isSet() << ", value: " << floatOptionDefault.getValue() << "\n"
-		<< "intOption          isSet: " << intOption.isSet() << ", value: " << intOption.getValue() << "\n"
-		<< "intOptionDefault   isSet: " << intOptionDefault.isSet() << ", value: " << intOptionDefault.getValue() << "\n"
-		<< "intOptionDefaultA  isSet: " << intOptionDefaultAssign.isSet() << ", value: " << intOptionDefaultAssign.getValue() << ", var: " << i << "\n"
-		<< "stringOption       isSet: " << stringOption.isSet() << ", value: " << stringOption.getValue() << "\n"
-		<< "stringOptionAssign isSet: " << stringOptionAssign.isSet() << ", value: " << stringOptionAssign.getValue() << ", var: " << s << "\n"
-		<< "implicitIntOption  isSet: " << implicitIntOption.isSet() << ", value: " << implicitIntOption.getValue() << ", var: " << m << "\n";
-
-	for (size_t n=0; n<op.nonOptionArgs().size(); ++n)
-		cout << "NonOptionArg: " << op.nonOptionArgs()[n] << "\n";
-
-	for (size_t n=0; n<op.unknownOptions().size(); ++n)
-		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
-}
-
-
 int main(int argc, char **argv)
 {
 	float f;
 	int m;
-	bool t;
 
 	Switch helpOption("h", "help", "produce help message");
-	Switch testOption("t", "test", "execute another test", &t);
-	Value<float> floatOption("f", "float", "test for float values", 1.23, &f);
+	Value<float> floatOption("f", "float", "test for float values", 1.23f, &f);
+	Value<double> doubleOption("d", "double", "test for double values", 3.14159265359);
 	Value<string> stringOption("s", "string", "test for string values");
 	Implicit<int> implicitIntOption("m", "implicit", "implicit test", 42, &m);
 
 	OptionParser op("Allowed options");
 	op.add(helpOption)
-	.add(testOption)
 	.add(floatOption)
+	.add(doubleOption)
 	.add(stringOption)
 	.add(implicitIntOption);
 
@@ -122,13 +55,15 @@ int main(int argc, char **argv)
 		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
 
 	// print all the configured values
-	cout << "testOption - value: " << testOption.getValue() << ", isSet: " << testOption.isSet() << ", count: " << testOption.count() << ", reference: " << t << "\n";
-	cout << "floatOption - value: " << floatOption.getValue() << ", reference: " << f << "\n";
-	cout << "stringOption - value: " << stringOption.getValue() << "\n";
+	cout << "floatOption  - isSet: " << floatOption.isSet() << ", value: " << floatOption.getValue() << ", reference: " << f << "\n";
+	cout << "doubleOption - isSet: " << doubleOption.isSet() << ", value: " << doubleOption.getValue() << "\n";
+	if (stringOption.isSet())
+	{
+	  	for (size_t n=0; n<stringOption.count(); ++n)
+			cout << "stringOption - value: " << stringOption.getValue(n) << "\n";
+	}
+	cout << "stringOption - value: " << stringOption.getValue(10) << "\n";
 	cout << "implicitIntOption - value: " << implicitIntOption.getValue() << ", isSet: " << implicitIntOption.isSet() << ", reference: " << m << "\n";
-
-	if (t)
-		test(argc, argv);
 }
 
 

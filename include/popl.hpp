@@ -40,7 +40,7 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.9"
+#define POPL_VERSION "0.10"
 
 class Option
 {
@@ -79,15 +79,16 @@ public:
 
 	Value<T>& assignTo(T* var);
 	Value<T>& setDefault(const T& value);
-	T getValue() const;
+	T getValue(size_t idx = 0) const;
 
 protected:
 	virtual void parse(const std::string& whatOption, const char* value);
 	virtual std::string optionToString() const;
 	virtual int hasArg() const;
+	virtual void addValue(const T& value);
 	virtual void updateReference();
 	T* assignTo_;
-	T value_;
+	std::vector<T> values_;
 	T default_;
 	bool hasDefault_;
 };
@@ -202,7 +203,7 @@ unsigned int Option::count() const
 
 bool Option::isSet() const
 {
-	return (count_ > 0);
+	return (count() > 0);
 }
 
 
@@ -248,7 +249,6 @@ Value<T>::Value(const std::string& shortOption, const std::string& longOption, c
 	assignTo_(NULL),
 	hasDefault_(false)
 {
-	updateReference();
 }
 
 
@@ -256,7 +256,6 @@ template<class T>
 Value<T>::Value(const std::string& shortOption, const std::string& longOption, const std::string& description, const T& defaultVal, T* assignTo) :
 	Option(shortOption, longOption, description),
 	assignTo_(assignTo),
-	value_(defaultVal),
 	default_(defaultVal),
 	hasDefault_(true)
 {
@@ -275,7 +274,6 @@ Value<T>& Value<T>::assignTo(T* var)
 template<class T>
 Value<T>& Value<T>::setDefault(const T& value)
 {
-	value_ = value;
 	default_ = value;
 	hasDefault_ = true;
 	return *this;
@@ -286,14 +284,54 @@ template<class T>
 void Value<T>::updateReference()
 {
 	if (assignTo_ != NULL)
-		*assignTo_ = value_;
+	{
+		if (isSet() || hasDefault_)
+			*assignTo_ = getValue();
+	}
 }
 
 
 template<class T>
-T Value<T>::getValue() const
+void Value<T>::addValue(const T& value)
 {
-	return value_;
+	values_.push_back(value);
+	++count_;
+	updateReference();
+}
+
+
+template<class T>
+T Value<T>::getValue(size_t idx) const
+{
+	if (!isSet())
+	{
+		if (hasDefault_)
+			return default_;
+		else
+		{
+			std::stringstream optionStr;
+			if (getShortOption() != 0)
+				optionStr << "-" << getShortOption();
+			else
+				optionStr << "--" << getLongOption();
+
+			throw std::out_of_range("option not set: \"" + optionStr.str() + "\"");
+		}
+	}
+
+	if (idx >= count_)
+	{
+		std::stringstream optionStr;
+		optionStr << "index out of range (" << idx << ") for \"";
+		if (getShortOption() != 0)
+			optionStr << "-" << getShortOption();
+		else
+			optionStr << "--" << getLongOption();
+		optionStr << "\"";
+		throw std::out_of_range(optionStr.str());
+	}
+
+	return values_[idx];
 }
 
 
@@ -307,14 +345,14 @@ int Value<T>::hasArg() const
 template<>
 void Value<std::string>::parse(const std::string& whatOption, const char* value)
 {
-	value_ = value;
-	updateReference();
+	addValue(value);
 }
 
 
 template<class T>
 void Value<T>::parse(const std::string& whatOption, const char* value)
 {
+	T parsedValue;
 	std::string strValue;
 	if (value != NULL)
 		strValue = value;
@@ -324,7 +362,7 @@ void Value<T>::parse(const std::string& whatOption, const char* value)
 	while (is.good())
 	{
 		if (is.peek() != EOF)
-			is >> value_;
+			is >> parsedValue;
 		else
 			break;
 
@@ -340,7 +378,7 @@ void Value<T>::parse(const std::string& whatOption, const char* value)
 	if (strValue.empty())
 		throw std::invalid_argument("missing argument for " + whatOption);
 
-	updateReference();
+	addValue(parsedValue);
 }
 
 
@@ -392,7 +430,7 @@ void Implicit<T>::parse(const std::string& whatOption, const char* value)
 	if (value != NULL)
 		Value<T>::parse(whatOption, value);
 	else
-		this->updateReference();
+		this->addValue(this->default_);
 }
 
 
@@ -424,8 +462,7 @@ Switch::Switch(const std::string& shortOption, const std::string& longOption, co
 
 void Switch::parse(const std::string& whatOption, const char* value)
 {
-	value_ = true;
-	updateReference();
+	addValue(true);
 }
 
 
@@ -538,7 +575,6 @@ void OptionParser::parse(int argc, char **argv)
 	for (size_t opt = 0; opt < options_.size(); ++opt)
 	{
 		Option* option(options_[opt]);
-		option->updateReference();
 		if (!option->getLongOption().empty())
 		{
 			::option o;
@@ -595,7 +631,8 @@ void OptionParser::parse(int argc, char **argv)
 		else if (c == '?')
 		{
 //			std::cout << "unknown(?): " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
-			unknownOptions_.push_back(argv[curind]);
+			if (std::find(unknownOptions_.begin(), unknownOptions_.end(), argv[curind]) == unknownOptions_.end())
+				unknownOptions_.push_back(argv[curind]);
 		}
 		/// missing argument
 		else if (c == ':')
@@ -605,7 +642,6 @@ void OptionParser::parse(int argc, char **argv)
 
 		if (option != NULL)
 		{
-			++option->count_;
 			option->parse(argv[curind], optarg);
 		}
 	}
