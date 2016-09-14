@@ -60,9 +60,8 @@ int main(int argc, char **argv)
 	if (stringOption.isSet())
 	{
 	  	for (size_t n=0; n<stringOption.count(); ++n)
-			cout << "stringOption - value: " << stringOption.getValue(n) << "\n";
+			cout << "stringOption #" << n << " - value: " << stringOption.getValue(n) << "\n";
 	}
-	cout << "stringOption - value: " << stringOption.getValue(10) << "\n";
 	cout << "implicitIntOption - value: " << implicitIntOption.getValue() << ", isSet: " << implicitIntOption.isSet() << ", reference: " << m << "\n";
 }
 
