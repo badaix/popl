@@ -14,7 +14,6 @@
     <ClCompile Include="PoplTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\getopt_win.h" />
     <ClInclude Include="include\popl.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
