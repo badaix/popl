@@ -27,7 +27,6 @@
 #include <sstream>
 #include <cstdio>
 #include <stdexcept>
-#include <algorithm>
 
 
 namespace popl
@@ -598,15 +597,12 @@ void OptionParser::parse(int argc, char **argv)
 	for (int n=1; n<argc; ++n)
 	{
 		const std::string arg(argv[n]);
-//		std::cout << "arg " << n << ": " << arg << "\n";
 		if (arg == "--")
 		{
-			///from here only non opt args
+			///from here on only non opt args
 			for (int m=n+1; m<argc; ++m)
-			{
-//				std::cout << "nonOptionArg: " << argv[m] << "\n";
 				nonOptionArgs_.push_back(argv[m]);
-			}
+
 			break;
 		}
 		else if (arg.find("--") == 0)
@@ -621,7 +617,6 @@ void OptionParser::parse(int argc, char **argv)
 				opt.resize(equalIdx);
 			}
 
-//			std::cout << "longArg: '" << opt << "', optarg: '" << optarg << "'\n";
 			Option* option = NULL;
 			if ((option = getLongOpt(opt)) != NULL)
 			{
@@ -638,15 +633,9 @@ void OptionParser::parse(int argc, char **argv)
 			}
 
 			if (option != NULL)
-			{
-//				std::cout << "Parse: " << opt << ", " << optarg << ", arg: " << option->hasArg() << "\n";
 				option->parse(opt, optarg.c_str());
-			}
 			else
-			{
-//				std::cout << "unknown: " << arg << "\n";
 				unknownOptions_.push_back(arg);
-			}
 		}
 		else if (arg.find("-") == 0)
 		{
@@ -679,10 +668,7 @@ void OptionParser::parse(int argc, char **argv)
 				}
 
 				if (option != NULL)
-				{
-//					std::cout << "Parse: " << opt << ", " << optarg << ", arg: " << option->hasArg() << "\n";
 					option->parse(std::string(1, c), optarg.c_str());
-				}
 				else
 					unknown = true;
 			}
@@ -699,8 +685,8 @@ void OptionParser::parse(int argc, char **argv)
 
 std::ostream& operator<<(std::ostream& out, const OptionParser& op)
 {
-    out << op.help();
-    return out;
+	out << op.help();
+	return out;
 }
 
 
