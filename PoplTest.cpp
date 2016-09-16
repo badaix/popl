@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 	int m;
 
 	Switch helpOption("h", "help", "produce help message");
+	Switch verboseOption("v", "", "verbose");
 	Value<float> floatOption("f", "float", "test for float values", 1.23f, &f);
 	Value<double> doubleOption("d", "double", "test for double values", 3.14159265359);
 	Value<string> stringOption("s", "string", "test for string values");
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 
 	OptionParser op("Allowed options");
 	op.add(helpOption)
+	.add(verboseOption)
 	.add(floatOption)
 	.add(doubleOption)
 	.add(stringOption)
@@ -55,6 +57,7 @@ int main(int argc, char **argv)
 		cout << "UnknownOptions: " << op.unknownOptions()[n] << "\n";
 
 	// print all the configured values
+	cout << "verboseOption  - count: " << verboseOption.count() << "\n";
 	cout << "floatOption  - isSet: " << floatOption.isSet() << ", value: " << floatOption.getValue() << ", reference: " << f << "\n";
 	cout << "doubleOption - isSet: " << doubleOption.isSet() << ", value: " << doubleOption.getValue() << "\n";
 	if (stringOption.isSet())

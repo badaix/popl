@@ -21,12 +21,6 @@
 
 #define NOMINMAX
 
-#ifdef WIN32
-#include <getopt_win.h>
-#else
-#include <getopt.h>
-#endif
-
 #include <string.h>
 #include <vector>
 #include <iostream>
@@ -39,7 +33,16 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.10"
+#define POPL_VERSION "0.2.0"
+
+
+enum // permitted values for its `has_arg' field...
+{
+	no_argument = 0,    // option never takes an argument
+	required_argument,  // option always requires an argument
+	optional_argument   // option may take an argument
+};
+
 
 class Option
 {
@@ -147,6 +150,9 @@ protected:
 	std::string description_;
 	std::vector<std::string> nonOptionArgs_;
 	std::vector<std::string> unknownOptions_;
+
+	Option* getLongOpt(const std::string& opt) const;
+	Option* getShortOpt(char opt) const;
 };
 
 
@@ -344,6 +350,9 @@ int Value<T>::hasArg() const
 template<>
 void Value<std::string>::parse(const std::string& whatOption, const char* value)
 {
+	if (strlen(value) == 0)
+		throw std::invalid_argument("missing argument for " + whatOption);
+
 	addValue(value);
 }
 
@@ -426,7 +435,7 @@ int Implicit<T>::hasArg() const
 template<class T>
 void Implicit<T>::parse(const std::string& whatOption, const char* value)
 {
-	if (value != NULL)
+	if ((value != NULL) && (strlen(value) > 0))
 		Value<T>::parse(whatOption, value);
 	else
 		this->addValue(this->default_);
@@ -562,94 +571,128 @@ std::string OptionParser::help() const
 }
 
 
+Option* OptionParser::getLongOpt(const std::string& opt) const
+{
+	for (size_t n = 0; n < options_.size(); ++n)
+	{
+		if (options_[n]->getLongOption() == opt)
+			return options_[n];
+	}
+	return NULL;
+}
+
+
+Option* OptionParser::getShortOpt(char opt) const
+{
+	for (size_t n = 0; n < options_.size(); ++n)
+		if (options_[n]->getShortOption() == opt)
+			return options_[n];
+	return NULL;
+}
+
+
 void OptionParser::parse(int argc, char **argv)
 {
 	unknownOptions_.clear();
 	nonOptionArgs_.clear();
-
-	std::vector<option> long_options;
-	std::stringstream short_options;
-	short_options << ":";
-	opterr = 0;
-	for (size_t opt = 0; opt < options_.size(); ++opt)
+	for (int n=1; n<argc; ++n)
 	{
-		Option* option(options_[opt]);
-		if (!option->getLongOption().empty())
+		const std::string arg(argv[n]);
+//		std::cout << "arg " << n << ": " << arg << "\n";
+		if (arg == "--")
 		{
-			::option o;
-			o.name = option->getLongOption().c_str();
-			o.has_arg = option->hasArg();
-			o.flag = 0;
-			o.val = option->getShortOption();
-			long_options.push_back(o);
-		}
-		if (option->getShortOption() != 0)
-		{
-			short_options << option->getShortOption();
-			if (option->hasArg() == required_argument)
-				short_options << ":";
-			else if (option->hasArg() == optional_argument)
-				short_options << "::";
-		}
-	}
-
-	while (1)
-	{
-		int option_index = 0;
-		int curind = optind;
-		char c = getopt_long(argc, argv, short_options.str().c_str(), &long_options[0], &option_index);
-		if ((c == -1) || (c == 255)) /// on Android 255 is returned
+			///from here only non opt args
+			for (int m=n+1; m<argc; ++m)
+			{
+//				std::cout << "nonOptionArg: " << argv[m] << "\n";
+				nonOptionArgs_.push_back(argv[m]);
+			}
 			break;
-
-		Option* option(NULL);
-		/// long options
-		if (c == 0)
+		}
+		else if (arg.find("--") == 0)
 		{
-			for (size_t opt = 0; opt < options_.size(); ++opt)
+			/// long option arg
+			std::string opt = arg.substr(2);
+			std::string optarg;
+			size_t equalIdx = opt.find('='); 
+			if (equalIdx != std::string::npos)
 			{
-				if (strcmp(options_[opt]->getLongOption().c_str(), long_options[option_index].name) == 0)
+				optarg = opt.substr(equalIdx + 1);
+				opt.resize(equalIdx);
+			}
+
+//			std::cout << "longArg: '" << opt << "', optarg: '" << optarg << "'\n";
+			Option* option = NULL;
+			if ((option = getLongOpt(opt)) != NULL)
+			{
+				if (option->hasArg() == no_argument) 
 				{
-					option = options_[opt];
-					break;
+					if (!optarg.empty())
+						option = NULL;
+				}
+				else if (option->hasArg() == required_argument)
+				{
+					if (optarg.empty() && n < argc-1)
+						optarg = argv[++n];
 				}
 			}
-		}
-		/// short options
-		else if ((c != '?') && (c != ':'))
-		{
-			for (size_t opt = 0; opt < options_.size(); ++opt)
+
+			if (option != NULL)
 			{
-				if (options_[opt]->getShortOption() == c)
-				{
-					option = options_[opt];
-					break;
-				}
+//				std::cout << "Parse: " << opt << ", " << optarg << ", arg: " << option->hasArg() << "\n";
+				option->parse(opt, optarg.c_str());
+			}
+			else
+			{
+//				std::cout << "unknown: " << arg << "\n";
+				unknownOptions_.push_back(arg);
 			}
 		}
-		/// unknown option
-		else if (c == '?')
+		else if (arg.find("-") == 0)
 		{
-//			std::cout << "unknown(?): " << c << ", " << (char)c << ", " << optopt << ", " << (char)optopt << ", " << argv[curind] << "\n";
-			if (std::find(unknownOptions_.begin(), unknownOptions_.end(), argv[curind]) == unknownOptions_.end())
-				unknownOptions_.push_back(argv[curind]);
-		}
-		/// missing argument
-		else if (c == ':')
-		{
-			throw std::invalid_argument("missing argument for " + std::string(argv[curind]));
-		}
+			/// short option arg
+			std::string opt = arg.substr(1);
+			bool unknown = false;
+			for (size_t m=0; m<opt.size(); ++m)
+			{
+				char c = opt[m];
+				Option* option = NULL;
+				std::string optarg;
 
-		if (option != NULL)
-		{
-			option->parse(argv[curind], optarg);
-		}
-	}
+				if ((option = getShortOpt(c)) != NULL)
+				{
+					if (option->hasArg() == required_argument)
+					{
+						/// use the rest of the current argument as optarg
+						optarg = opt.substr(m + 1);
+						/// or the next arg
+						if (optarg.empty() && n < argc-1)
+							optarg = argv[++n];
+						m = opt.size();
+					}
+					else if (option->hasArg() == optional_argument)
+					{
+						/// use the rest of the current argument as optarg
+						optarg = opt.substr(m + 1);
+						m = opt.size();
+					}
+				}
 
-	/// non option args
-	if (optind < argc)
-	{
-		while (optind < argc)
-			nonOptionArgs_.push_back(argv[optind++]);
+				if (option != NULL)
+				{
+//					std::cout << "Parse: " << opt << ", " << optarg << ", arg: " << option->hasArg() << "\n";
+					option->parse(std::string(1, c), optarg.c_str());
+				}
+				else
+					unknown = true;
+			}
+			if (unknown)
+				unknownOptions_.push_back(arg);
+		}
+		else
+		{
+			nonOptionArgs_.push_back(arg);
+		}
 	}
 }
 
