@@ -23,7 +23,7 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.2.0"
+#define POPL_VERSION "0.3.0"
 
 
 enum // permitted values for its `has_arg' field...
