@@ -2,7 +2,7 @@
 
 Program Options Parser Lib
 
-popl is a c++ wrapper around GNU's `getopt` and thus it closely follows the POSIX guidelines for the command-line options of a program.
+popl is a c++ option parser that supports the same options as GNU's `getopt` and thus closely follows the POSIX guidelines for the command-line options of a program.
 
 ## Features
 * Single header file implementation. Simply include and use it!
