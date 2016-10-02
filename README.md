@@ -19,8 +19,8 @@ Key objects are:
   `Implicit<int> implicitIntOption("v", "verbose", "verbosity level", 2);`
 
 ## And why?
-There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using the `program options` part of boost. Since it's not a header only library, even a small tool has to be linked against `boost system` and `boost program options`.  
-I tried out two other libs that were recommended on stackoverflow. Both had their small flaws (from my point of view), and so I switched to `getopt`, with it's main drawbacks: 
+There are a lot of option parsers around. My favorite one is `boost program options`. But thanks to the new C++11 language features, I sometimes end up in just using the `program options` part of boost. Since it's not a header only library, even a small project has to be linked against `boost system` and `boost program options`.  
+I tried out two other libs that were recommended on [stackoverflow](http://stackoverflow.com/questions/865668/how-to-parse-command-line-arguments-in-c). Both had their small flaws (from my point of view), and so I switched to `getopt`, with it's main drawbacks: 
 * Short and long argument of a single option are defined on two places
 * Short and long option are parsed on two different places
 * The result is a string and has to be casted to the target type
