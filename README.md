@@ -92,3 +92,28 @@ floatOption - value: 1.23, reference: 1.23
 stringOption - value: hello
 implicitIntOption - value: 23, isSet: 1, reference: 23
 ```
+
+## Planned features
+
+- [ ] Support different output formatters for the help message
+  1. the current standard one
+  2. [troff](https://en.wikipedia.org/wiki/Troff) format for man-pages
+ 
+    ```troff
+    .SS Allowed options:
+    .TP
+    \fB-h, --help\fR
+    produce help message
+    .TP
+    \fB-t, --test\fR
+    execute another test
+    .TP
+    \fB-f, --float arg (=1.23)\fR
+    test for float values
+    .TP
+    \fB-s, --string arg \fR
+    test for string values
+    .TP
+    \fB-m, --implicit [=arg(=42)]\fR
+    implicit test
+    ```
