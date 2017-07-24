@@ -1,6 +1,6 @@
 /***
     This file is part of popl (program options parser lib)
-    Copyright (C) 2015-2016 Johannes Pohl
+    Copyright (C) 2015-2017 Johannes Pohl
     
     This software may be modified and distributed under the terms
     of the MIT license.  See the LICENSE file for details.
@@ -23,7 +23,7 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.3.0"
+#define POPL_VERSION "0.4.0"
 
 
 enum // permitted values for its `has_arg' field...
@@ -31,6 +31,14 @@ enum // permitted values for its `has_arg' field...
 	no_argument = 0,    // option never takes an argument
 	required_argument,  // option always requires an argument
 	optional_argument   // option may take an argument
+};
+
+
+enum Attribute
+{
+	null,
+	hidden
+	//advanced // not used for now
 };
 
 
@@ -45,6 +53,8 @@ public:
 	std::string getDescription() const;
 	unsigned int count() const;
 	bool isSet() const;
+	void setAttribute(const Attribute& attribute);
+	Attribute getAttribute() const;
 
 protected:
 	virtual void parse(const std::string& whatOption, const char* value) = 0;
@@ -57,6 +67,7 @@ protected:
 	std::string longOption_;
 	std::string description_;
 	unsigned int count_;
+	Attribute attribute_;
 };
 
 
@@ -128,7 +139,7 @@ class OptionParser
 public:
 	OptionParser(const std::string& description = "");
 	virtual ~OptionParser();
-	OptionParser& add(Option& option);
+	OptionParser& add(Option& option, const Attribute& attribute = null);
 	void parse(int argc, char **argv);
 	std::string help() const;
 	const std::vector<Option*>& options() const;
@@ -155,7 +166,8 @@ Option::Option(const std::string& shortOption, const std::string& longOption, co
 	shortOption_(shortOption),
 	longOption_(longOption),
 	description_(description),
-	count_(0)
+	count_(0),
+	attribute_(null)
 {
 	if (shortOption.size() > 1)
 		throw std::invalid_argument("length of short option must be <= 1: '" + shortOption + "'");
@@ -230,6 +242,18 @@ std::vector<std::string> Option::descriptionToString(size_t width) const
 		lines.push_back(line);
 
 	return lines;
+}
+
+
+void Option::setAttribute(const Attribute& attribute)
+{
+	this->attribute_ = attribute;
+}
+
+
+Attribute Option::getAttribute() const
+{
+	return attribute_;
 }
 
 
@@ -491,7 +515,7 @@ OptionParser::~OptionParser()
 }
 
 
-OptionParser& OptionParser::add(Option& option)
+OptionParser& OptionParser::add(Option& option, const Attribute& attribute)
 {
 	for (size_t n=0; n<options_.size(); ++n)
 	{
@@ -500,6 +524,8 @@ OptionParser& OptionParser::add(Option& option)
 		if (!option.getLongOption().empty() && (option.getLongOption() == (options_[n]->getLongOption())))
 			throw std::invalid_argument("dublicate long option '--" + option.getLongOption() + "'");
 	}
+	if (attribute != null)
+		option.setAttribute(attribute);
 	options_.push_back(&option);
 	return *this;
 }
@@ -539,6 +565,8 @@ std::string OptionParser::help() const
 
 	for (size_t opt = 0; opt < options_.size(); ++opt)
 	{
+		if (options_[opt]->getAttribute() == hidden)
+			continue;
 		std::string optionStr = options_[opt]->optionToString();
 		if (optionStr.size() < optionRightMargin)
 			optionStr.resize(optionRightMargin, ' ');

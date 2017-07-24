@@ -1,6 +1,6 @@
 /***
     This file is part of popl (program options parser lib)
-    Copyright (C) 2015-2016 Johannes Pohl
+    Copyright (C) 2015-2017 Johannes Pohl
     
     This software may be modified and distributed under the terms
     of the MIT license.  See the LICENSE file for details.
@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 
 	Switch helpOption("h", "help", "produce help message");
 	Switch verboseOption("v", "", "verbose");
+	Switch hiddenOption("x", "", "hidden option");
 	Value<float> floatOption("f", "float", "test for float values", 1.23f, &f);
 	Value<double> doubleOption("d", "double", "test for double values", 3.14159265359);
 	Value<string> stringOption("s", "string", "test for string values");
@@ -27,6 +28,7 @@ int main(int argc, char **argv)
 	OptionParser op("Allowed options");
 	op.add(helpOption)
 	.add(verboseOption)
+	.add(hiddenOption, hidden)
 	.add(floatOption)
 	.add(doubleOption)
 	.add(stringOption)
@@ -48,6 +50,7 @@ int main(int argc, char **argv)
 
 	// print all the configured values
 	cout << "verboseOption  - count: " << verboseOption.count() << "\n";
+	cout << "hiddenOption  - count: " << hiddenOption.count() << "\n";
 	cout << "floatOption  - isSet: " << floatOption.isSet() << ", value: " << floatOption.getValue() << ", reference: " << f << "\n";
 	cout << "doubleOption - isSet: " << doubleOption.isSet() << ", value: " << doubleOption.getValue() << "\n";
 	if (stringOption.isSet())
