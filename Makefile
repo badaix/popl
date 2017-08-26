@@ -10,8 +10,8 @@ SHELL = /bin/bash
 CXX      = /usr/bin/g++
 CXXFLAGS = -Wall -O3 -Iinclude
 
-OBJ = PoplTest.o
-BIN = popl
+OBJ = popl_test.o
+BIN = popl_test
 
 all:	$(TARGET)
 

@@ -1,5 +1,12 @@
 /***
-    This file is part of popl (program options parser lib)
+     ____   __  ____  __   
+    (  _ \ /  \(  _ \(  )  
+    ) __/(  O )) __// (_/\
+    (__)   \__/(__)  \____/
+    version 0.6.0
+    https://github.com/badaix/popl
+
+	This file is part of popl (program options parser lib)
     Copyright (C) 2015-2017 Johannes Pohl
     
     This software may be modified and distributed under the terms

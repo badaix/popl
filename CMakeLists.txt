@@ -1,3 +1,8 @@
+#  ____   __  ____  __   
+# (  _ \ /  \(  _ \(  )  
+#  ) __/(  O )) __// (_/\
+# (__)   \__/(__)  \____/
+
 # This file is part of popl (program options parser lib)
 # Copyright (C) 2015-2017 Johannes Pohl
 
@@ -6,14 +11,14 @@
 
 cmake_minimum_required(VERSION 2.4) 
 
-project(PoplTest)
+project(popl_test)
 
 include_directories(
 	"include"
 )
 
-add_executable(PoplTest
-	PoplTest.cpp
+add_executable(popl_test
+	popl_test.cpp
 )
 
 
