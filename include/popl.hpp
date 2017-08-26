@@ -23,7 +23,7 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.4.0"
+#define POPL_VERSION "0.5.0"
 
 
 enum // permitted values for its `has_arg' field...
@@ -83,6 +83,7 @@ public:
 	Value<T>& assignTo(T* var);
 	Value<T>& setDefault(const T& value);
 	T getValue(size_t idx = 0) const;
+	void setValue(const T& value);
 
 protected:
 	virtual void parse(const std::string& whatOption, const char* value);
@@ -316,6 +317,14 @@ void Value<T>::addValue(const T& value)
 	values_.push_back(value);
 	++count_;
 	updateReference();
+}
+
+
+template<class T>
+void Value<T>::setValue(const T& value)
+{
+	values_.clear();
+	addValue(value);
 }
 
 

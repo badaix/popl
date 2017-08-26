@@ -17,4 +17,7 @@ add_executable(PoplTest
 )
 
 
-#install(TARGETS at_commander DESTINATION usr/bin)
+SET(CMAKE_INSTALL_INCLUDEDIR include CACHE PATH "Output directory for header files")
+		
+install(FILES include/popl.hpp DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
