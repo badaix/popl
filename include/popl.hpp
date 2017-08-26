@@ -14,8 +14,8 @@
 ***/
 
 
-#ifndef POPL_H
-#define POPL_H
+#ifndef POPL_HPP
+#define POPL_HPP
 
 #define NOMINMAX
 
@@ -718,8 +718,9 @@ std::ostream& operator<<(std::ostream& out, const OptionParser& op)
 }
 
 
-} // namespace popl
+} /// namespace popl
 
-#endif
+
+#endif /// POPL_HPP
 
 
