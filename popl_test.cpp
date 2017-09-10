@@ -7,6 +7,7 @@
 ***/
 
 #include "popl.hpp"
+#include <iostream>
 
 using namespace std;
 using namespace popl;
@@ -15,29 +16,27 @@ using namespace popl;
 int main(int argc, char **argv)
 {
 	float f;
-	int m;
-
-	Switch help_option("h", "help", "produce help message");
-	Switch verbose_option("v", "", "verbose");
-	Switch hidden_option("x", "", "hidden option");
-	Value<float> float_option("f", "float", "test for float values", 1.23f, &f);
-	Value<double> double_option("d", "double", "test for double values", 3.14159265359);
-	Value<string> string_option("s", "string", "test for string values");
-	Implicit<int> implicit_int_option("m", "implicit", "implicit test", 42, &m);
+	int m, i;
+	bool v;
 
 	OptionParser op("Allowed options");
-	op.add(help_option)
-	.add(verbose_option)
-	.add(hidden_option, hidden)
-	.add(float_option)
-	.add(double_option)
-	.add(string_option)
-	.add(implicit_int_option);
+	auto help_option    = op.add<Switch>("h", "help", "produce help message");
+	auto verbose_option = op.add<Switch>("v", "verbose", "be verbose", &v);
+	auto hidden_option  = op.add<Switch>("x", "", "hidden option");
+	auto double_option  = op.add<Value<double>>("d", "double", "test for double values", 3.14159265359);
+	auto float_option   = op.add<Value<float>>("f", "float", "test for float values", 2.71828182845f, &f);
+	                      op.add<Value<int>>("i", "int", "test for int value w/o option", 23, &i);
+	auto string_option  = op.add<Value<string>>("s", "string", "test for string values");
+	auto implicit_int_option = op.add<Implicit<int>>("m", "implicit", "implicit test", 42);
+	implicit_int_option->assign_to(&m);
 
 	op.parse(argc, argv);
 
+	TerminalHelpPrinter hp;
+	cout << hp.print_help(op) << "\n";
+
 	// print auto-generated help message
-	if (help_option.is_set())
+	if (help_option->is_set())
 		cout << op << "\n";
 
 	// show all non option arguments (those without "-o" or "--option")
@@ -49,16 +48,20 @@ int main(int argc, char **argv)
 		cout << "unknown_options: " << op.unknown_options()[n] << "\n";
 
 	// print all the configured values
-	cout << "verbose_option  - count: " << verbose_option.count() << "\n";
-	cout << "hidden_option  - count: " << hidden_option.count() << "\n";
-	cout << "float_option  - is_set: " << float_option.is_set() << ", value: " << float_option.value() << ", reference: " << f << "\n";
-	cout << "double_option - is_set: " << double_option.is_set() << ", value: " << double_option.value() << "\n";
-	if (string_option.is_set())
+	cout << "verbose_option - is_set: " << verbose_option->is_set() << ", count: " << verbose_option->count() << ", reference: " << v << "\n";
+	cout << "hidden_option  - is_set: " << hidden_option->is_set() << ", count: " << hidden_option->count() << "\n";
+	cout << "double_option  - is_set: " << double_option->is_set() << ", count: " << double_option->count() << ", value: " << double_option->value() << "\n";
+	cout << "string_option  - is_set: " << string_option->is_set() << ", count: " << string_option->count() << "\n";
+	if (string_option->is_set())
 	{
-	  	for (size_t n=0; n<string_option.count(); ++n)
-			cout << "string_option #" << n << " - value: " << string_option.value(n) << "\n";
+	  	for (size_t n=0; n<string_option->count(); ++n)
+			cout << "string_option #" << n << " - value: " << string_option->value(n) << "\n";
 	}
-	cout << "implicit_int_option - value: " << implicit_int_option.value() << ", is_set: " << implicit_int_option.is_set() << ", reference: " << m << "\n";
+	cout << "float_option   - is_set: " << float_option->is_set() << ", value: " << float_option->value() << ", reference: " << f << "\n";
+	cout << "int w/o option - reference: " << i << "\n";
+	auto int_option = op.get_option<Value<int>>('i');
+	cout << "int_option     - is_set: " << int_option->is_set() << ", value: " << int_option->value() << ", reference: " << i << "\n";
+	cout << "imp_int_option - is_set: " << implicit_int_option->is_set() << ", value: " << implicit_int_option->value() << ", reference: " << m << "\n";
 }
 
 
