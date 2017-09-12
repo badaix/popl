@@ -50,6 +50,11 @@ enum class Attribute
 };
 
 
+/// Abstract Base class for Options
+/**
+ * Base class for Options
+ * holds just configuration data, no runtime data
+ */
 class Option
 {
 friend class OptionParser;
@@ -67,7 +72,7 @@ public:
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value) = 0;
-	//virtual std::string to_string() const;
+	virtual std::string to_string() const;
 
 	std::string short_option_;
 	std::string long_option_;
@@ -78,6 +83,11 @@ protected:
 
 
 
+/// Abstract Base class for Options with runtime data
+/**
+ * Base class for Options with runtime data
+ * Stores a value of type T with getter and setter
+ */
 template<class T>
 class ValueTemplate : public Option
 {
@@ -91,11 +101,8 @@ public:
 
 	void set_value(const T& value);
 	virtual T value(size_t idx = 0) const;
-//	virtual Argument argument_type() const;
 
 protected:
-//	virtual void parse(const std::string& what_option, const char* value);
-
 	virtual void update_reference();
 	virtual void add_value(const T& value);
 
@@ -107,6 +114,11 @@ protected:
 
 
 
+/// Value option with optional default value
+/**
+ * Value option with optional default value
+ * If set, it requires an argument
+ */
 template<class T>
 class Value : public ValueTemplate<T>
 {
@@ -124,12 +136,20 @@ public:
 protected:
 	virtual void parse(const std::string& what_option, const char* value);
 	virtual void update_reference();
+	virtual std::string to_string() const;
 	std::unique_ptr<T> default_;
 };
 
 
 
 
+/// Value option with implicit default value
+/**
+ * Value option with implicit default value
+ * If set, an argument is optional
+ * without argument it carries the implicit default value
+ * with argument it carries the explicit value
+ */
 template<class T>
 class Implicit : public Value<T>
 {
@@ -140,11 +160,18 @@ public:
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value);
+	virtual std::string to_string() const;
 };
 
 
 
 
+/// Value option without value
+/**
+ * Value option without value
+ * Does not require an argument
+ * Can be either set or not set
+ */
 class Switch : public ValueTemplate<bool>
 {
 public:
@@ -154,6 +181,7 @@ public:
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value);
+	virtual std::string to_string() const;
 };
 
 
@@ -161,6 +189,13 @@ protected:
 
 using Option_ptr = std::shared_ptr<Option>;
 
+/// OptionParser manages all Options
+/**
+ * OptionParser manages all Options
+ * Add Options (Option_Type = Value<T>, Implicit<T> or Switch) with "add<Option_Type>(option params)""
+ * Call "parse(argc, argv)" to trigger parsing of the options and to 
+ * fill "non_option_args" and "unknown_options"
+ */
 class OptionParser
 {
 friend class HelpPrinter;
@@ -195,6 +230,10 @@ protected:
 
 
 
+/// Abstract class to print usage information
+/**
+ * Class to print usage information
+ */
 class HelpPrinter
 {
 public:
@@ -207,6 +246,10 @@ public:
 
 
 
+/// Print usage information on a terminal
+/**
+ * Print usage information on a terminal
+ */
 class TerminalHelpPrinter: public HelpPrinter
 {
 public:
@@ -215,6 +258,7 @@ public:
 
 	virtual std::string print_help(const OptionParser& op) const;
 };
+
 
 
 
@@ -538,7 +582,7 @@ template<typename T, typename... Ts>
 std::shared_ptr<T> OptionParser::add(Ts&&... params)
 {
 	static_assert(
-		std::is_base_of<Option, typename std::decay<T>::type>::value && !std::is_same<Option, typename std::decay<T>::type>::value, 
+		std::is_base_of<Option, typename std::decay<T>::type>::value,
 		"type T must be Switch, Value or Implicit"
 	);
 	std::shared_ptr<T> option = std::make_shared<T>(std::forward<Ts>(params)...);
@@ -791,7 +835,7 @@ std::string optionStr;
 }
 
 
-/*
+
 std::string Option::to_string() const
 {
 	std::stringstream line;
@@ -816,12 +860,12 @@ std::string Value<T>::to_string() const
 {
 	std::stringstream ss;
 	ss << Option::to_string() << " arg";
-	if (has_default_)
+	if (default_)
 	{
 		std::stringstream defaultStr;
-		defaultStr << default_;
+		defaultStr << *default_;
 		if (!defaultStr.str().empty())
-			ss << " (=" << default_ << ")";
+			ss << " (=" << *default_ << ")";
 	}
 	return ss.str();
 }
@@ -837,10 +881,10 @@ template<class T>
 std::string Implicit<T>::to_string() const
 {
 	std::stringstream ss;
-	ss << Option::to_string() << " [=arg(=" << this->default_ << ")]";
+	ss << Option::to_string() << " [=arg(=" << *this->default_ << ")]";
 	return ss.str();
 }
-*/
+
 
 std::ostream& operator<<(std::ostream& out, const OptionParser& op)
 {
