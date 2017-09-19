@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	OptionParser op("Allowed options");
 	auto help_option    = op.add<Switch>("h", "help", "produce help message");
 	auto verbose_option = op.add<Switch>("v", "verbose", "be verbose", &v);
-	auto hidden_option  = op.add<Switch>("x", "", "hidden option");
+	auto hidden_option  = op.add<Switch, Attribute::hidden>("x", "", "hidden option");
 	auto double_option  = op.add<Value<double>>("d", "double", "test for double values", 3.14159265359);
 	auto float_option   = op.add<Value<float>>("f", "float", "test for float values", 2.71828182845f, &f);
 	                      op.add<Value<int>>("i", "int", "test for int value w/o option", 23, &i);
@@ -31,9 +31,6 @@ int main(int argc, char **argv)
 	implicit_int_option->assign_to(&m);
 
 	op.parse(argc, argv);
-
-	TerminalHelpPrinter hp;
-	cout << hp.print_help(op) << "\n";
 
 	// print auto-generated help message
 	if (help_option->is_set())
