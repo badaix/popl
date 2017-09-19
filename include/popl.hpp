@@ -3,7 +3,7 @@
     (  _ \ /  \(  _ \(  )  
      ) __/(  O )) __// (_/\
     (__)   \__/(__)  \____/
-    version 0.6.0
+    version 0.7.0
     https://github.com/badaix/popl
 
 	This file is part of popl (program options parser lib)
@@ -130,13 +130,13 @@ public:
 	bool has_default() const;
 	T get_default() const;
 
-	virtual T value(size_t idx = 0) const;
-	virtual Argument argument_type() const;
+	T value(size_t idx = 0) const override;
+	Argument argument_type() const override;
 
 protected:
-	virtual void parse(const std::string& what_option, const char* value);
-	virtual void update_reference();
-	virtual std::string to_string() const;
+	void parse(const std::string& what_option, const char* value) override;
+	void update_reference() override;
+	std::string to_string() const override;
 	std::unique_ptr<T> default_;
 };
 
@@ -156,11 +156,11 @@ class Implicit : public Value<T>
 public:
 	Implicit(const std::string& short_option, const std::string& long_option, const std::string& description, const T& implicit_val, T* assign_to = NULL);
 
-	virtual Argument argument_type() const;
+	Argument argument_type() const override;
 
 protected:
-	virtual void parse(const std::string& what_option, const char* value);
-	virtual std::string to_string() const;
+	void parse(const std::string& what_option, const char* value) override;
+	std::string to_string() const override;
 };
 
 
@@ -177,11 +177,11 @@ class Switch : public ValueTemplate<bool>
 public:
 	Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to = NULL);
 
-	virtual Argument argument_type() const;
+	Argument argument_type() const override;
 
 protected:
-	virtual void parse(const std::string& what_option, const char* value);
-	virtual std::string to_string() const;
+	void parse(const std::string& what_option, const char* value) override;
+	std::string to_string() const override;
 };
 
 
