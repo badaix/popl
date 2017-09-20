@@ -3,7 +3,7 @@
     (  _ \ /  \(  _ \(  )  
      ) __/(  O )) __// (_/\
     (__)   \__/(__)  \____/
-    version 0.7.0
+    version 0.8.0
     https://github.com/badaix/popl
 
 	This file is part of popl (program options parser lib)
@@ -19,19 +19,19 @@
 
 #define NOMINMAX
 
-#include <cstring>
-#include <vector>
-#include <iostream>
-#include <sstream>
 #include <cstdio>
-#include <stdexcept>
+#include <cstring>
+#include <iostream>
 #include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 
 namespace popl
 {
 
-#define POPL_VERSION "0.7.0"
+#define POPL_VERSION "0.8.0"
 
 
 enum class Argument // permitted values for its `argument_type' field...
@@ -44,9 +44,11 @@ enum class Argument // permitted values for its `argument_type' field...
 
 enum class Attribute
 {
-	null,
-	hidden
-	//advanced // not used for now
+	inactive = 0,
+	hidden = 1,
+	normal = 2,
+	advanced = 3,
+	expert = 4
 };
 
 
@@ -59,7 +61,7 @@ class Option
 {
 friend class OptionParser;
 public:
-	Option(const std::string& short_option, const std::string& long_option, const std::string& description);
+	Option(const std::string& short_option, const std::string& long_option, std::string description);
 
 	char short_option() const;
 	std::string long_option() const;
@@ -92,7 +94,7 @@ template<class T>
 class ValueTemplate : public Option
 {
 public:
-	ValueTemplate(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to = NULL);
+	ValueTemplate(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to = nullptr);
 
 	unsigned int count() const;
 	bool is_set() const;
@@ -124,7 +126,7 @@ class Value : public ValueTemplate<T>
 {
 public:
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
-	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = NULL);
+	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
 	void set_default(const T& value);
 	bool has_default() const;
@@ -154,7 +156,7 @@ template<class T>
 class Implicit : public Value<T>
 {
 public:
-	Implicit(const std::string& short_option, const std::string& long_option, const std::string& description, const T& implicit_val, T* assign_to = NULL);
+	Implicit(const std::string& short_option, const std::string& long_option, const std::string& description, const T& implicit_val, T* assign_to = nullptr);
 
 	Argument argument_type() const override;
 
@@ -175,7 +177,7 @@ protected:
 class Switch : public ValueTemplate<bool>
 {
 public:
-	Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to = NULL);
+	Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to = nullptr);
 
 	Argument argument_type() const override;
 
@@ -199,8 +201,8 @@ using Option_ptr = std::shared_ptr<Option>;
 class OptionParser
 {
 public:
-	OptionParser(const std::string& description = "");
-	virtual ~OptionParser();
+	explicit OptionParser(std::string description = "");
+	virtual ~OptionParser() = default;
 
 	template<typename T, Attribute attribute, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
@@ -208,7 +210,7 @@ public:
 	std::shared_ptr<T> add(Ts&&... params);
 
 	void parse(int argc, char **argv);
-	std::string help() const;
+	std::string help(const Attribute& max_level = Attribute::normal) const;
 	std::string description() const;
 	const std::vector<Option_ptr>& options() const;
 	const std::vector<std::string>& non_option_args() const;
@@ -234,11 +236,11 @@ protected:
 
 /// Option implementation /////////////////////////////////
 
-Option::Option(const std::string& short_option, const std::string& long_option, const std::string& description) :
+Option::Option(const std::string& short_option, const std::string& long_option, std::string description) :
 	short_option_(short_option),
 	long_option_(long_option),
-	description_(description),
-	attribute_(Attribute::null)
+	description_(std::move(description)),
+	attribute_(Attribute::normal)
 {
 	if (short_option.size() > 1)
 		throw std::invalid_argument("length of short option must be <= 1: '" + short_option + "'");
@@ -339,7 +341,7 @@ void ValueTemplate<T>::assign_to(T* var)
 template<class T>
 void ValueTemplate<T>::update_reference()
 {
-	if ((assign_to_ != NULL) && is_set())
+	if ((assign_to_) && is_set())
 		*assign_to_ = value();
 }
 
@@ -391,7 +393,7 @@ T ValueTemplate<T>::value(size_t idx) const
 
 template<class T>
 Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
-	ValueTemplate<T>(short_option, long_option, description, NULL)
+	ValueTemplate<T>(short_option, long_option, description, nullptr)
 {
 }
 
@@ -432,7 +434,7 @@ T Value<T>::get_default() const
 template<class T>
 void Value<T>::update_reference()
 {
-	if (this->assign_to_ != NULL)
+	if (this->assign_to_)
 	{
 		if (this->is_set() || default_)
 			*this->assign_to_ = value();
@@ -471,7 +473,7 @@ void Value<T>::parse(const std::string& what_option, const char* value)
 {
 	T parsed_value;
 	std::string strValue;
-	if (value != NULL)
+	if (value != nullptr)
 		strValue = value;
 
 	std::istringstream is(strValue);
@@ -536,7 +538,7 @@ Argument Implicit<T>::argument_type() const
 template<class T>
 void Implicit<T>::parse(const std::string& what_option, const char* value)
 {
-	if ((value != NULL) && (strlen(value) > 0))
+	if ((value != nullptr) && (strlen(value) > 0))
 		Value<T>::parse(what_option, value);
 	else
 		this->add_value(*this->default_);
@@ -559,12 +561,12 @@ std::string Implicit<T>::to_string() const
 Switch::Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to) :
 	ValueTemplate<bool>(short_option, long_option, description, assign_to)
 {
-	if (assign_to)
+	if (assign_to != nullptr)
 		*assign_to = false;
 }
 
 
-void Switch::parse(const std::string& what_option, const char* value)
+void Switch::parse(const std::string& /*what_option*/, const char* /*value*/)
 {
 	add_value(true);
 }
@@ -586,12 +588,7 @@ std::string Switch::to_string() const
 
 /// OptionParser implementation /////////////////////////////////
 
-OptionParser::OptionParser(const std::string& description) : description_(description)
-{
-}
-
-
-OptionParser::~OptionParser()
+OptionParser::OptionParser(std::string description) : description_(std::move(description))
 {
 }
 
@@ -599,7 +596,7 @@ OptionParser::~OptionParser()
 template<typename T, typename... Ts>
 std::shared_ptr<T> OptionParser::add(Ts&&... params)
 {
-	return add<T, Attribute::null>(std::forward<Ts>(params)...);
+	return add<T, Attribute::normal>(std::forward<Ts>(params)...);
 }
 
 
@@ -720,8 +717,10 @@ void OptionParser::parse(int argc, char **argv)
 				opt.resize(equalIdx);
 			}
 
-			Option_ptr option;
-			if ((option = find_option(opt)) != nullptr)
+			Option_ptr option = find_option(opt);
+			if (option && (option->attribute() == Attribute::inactive))
+				option = nullptr;
+			if (option)
 			{
 				if (option->argument_type() == Argument::no)
 				{
@@ -748,10 +747,12 @@ void OptionParser::parse(int argc, char **argv)
 			for (size_t m=0; m<opt.size(); ++m)
 			{
 				char c = opt[m];
-				Option_ptr option;
 				std::string optarg;
 
-				if ((option = find_option(c)) != nullptr)
+				Option_ptr option = find_option(c);
+				if (option && (option->attribute() == Attribute::inactive))
+					option = nullptr;
+				if (option)
 				{
 					if (option->argument_type() == Argument::required)
 					{
@@ -770,7 +771,7 @@ void OptionParser::parse(int argc, char **argv)
 					}
 				}
 
-				if (option != NULL)
+				if (option)
 					option->parse(std::string(1, c), optarg.c_str());
 				else
 					unknown = true;
@@ -788,8 +789,11 @@ void OptionParser::parse(int argc, char **argv)
 
 
 
-std::string OptionParser::help() const
+std::string OptionParser::help(const Attribute& max_level) const
 {
+	if (max_level < Attribute::normal)
+		throw std::invalid_argument("help level must be at least normal");
+
 	std::stringstream s;
 	if (!description_.empty())
 		s << description_ << ":\n";
@@ -798,15 +802,16 @@ std::string OptionParser::help() const
 	const size_t maxDescriptionLeftMargin(40);
 //	const size_t descriptionRightMargin(80);
 
-	for (size_t opt = 0; opt < options_.size(); ++opt)
-		optionRightMargin = std::max(optionRightMargin, options_[opt]->to_string().size() + 2);
+	for (const auto& option: options_)
+		optionRightMargin = std::max(optionRightMargin, option->to_string().size() + 2);
 	optionRightMargin = std::min(maxDescriptionLeftMargin - 2, optionRightMargin);
 
-	for (size_t opt = 0; opt < options_.size(); ++opt)
+	for (const auto& option: options_)
 	{
-		if (options_[opt]->attribute() == Attribute::hidden)
+		if ((option->attribute() <= Attribute::hidden) || 
+			(option->attribute() > max_level))
 			continue;
-		std::string optionStr = options_[opt]->to_string();
+		std::string optionStr = option->to_string();
 		if (optionStr.size() < optionRightMargin)
 			optionStr.resize(optionRightMargin, ' ');
 		else
@@ -815,7 +820,7 @@ std::string OptionParser::help() const
 
 		std::string line;
 		std::vector<std::string> lines;
-		std::stringstream description(options_[opt]->description());
+		std::stringstream description(option->description());
 		while (std::getline(description, line, '\n'))
 			lines.push_back(line);
 
@@ -842,9 +847,9 @@ std::ostream& operator<<(std::ostream& out, const OptionParser& op)
 }
 
 
-} /// namespace popl
+} // namespace popl
 
 
-#endif /// POPL_HPP
+#endif // POPL_HPP
 
 
