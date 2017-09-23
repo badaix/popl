@@ -46,7 +46,7 @@ if (string_option->is_set())
   
 Every option type can have a default value:
 ```C++
-auto string_option = op.add<Value<string>>("s", "string", "test for string values", "default string");
+auto string_option = op.add<Value<std::string>>("s", "string", "test for string values", "default string");
 ```
 if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be "default string"  
   
