@@ -18,6 +18,7 @@ Key object is the `OptionParser`, which is populated with different options type
 * `Value<T>` Option with argument  
 * `Switch` Option without argument  
 * `Implicit<T>` Option with optional argument (using an implicit value if no argument is given)  
+
 Next, the OptionParser will parse the command line (by passing `argc` and `argv`) and fill the option objects.  
 Each option type is initialized with a short option, long option and a help message.  
 Basic usage example:
