@@ -61,10 +61,10 @@ if set on command line, `s` will carry the specified value otherwise it will be 
 Options can be hidden in the auto-created help message, or classified as "advanced", or "expert"
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "test for string values");
-auto advanced_int  = op.add<Value<int, Attribute::advanced>>("i", "integer", "advanced integer value");
-auto hidden_bool   = op.add<Swtich, Attribute::hidden>("", "hidden", "hidden flag");
+auto advanced_int  = op.add<Value<int, Visibility::advanced>>("i", "integer", "advanced integer value");
+auto hidden_bool   = op.add<Swtich, Visibility::hidden>("", "hidden", "hidden flag");
 ```
-Now `cout << op.help()` will not show the hidden or advanced option, while `cout << op.help(Attribute::advanced)` will show the advanced option. The hidden one is never shown to the user.
+Now `cout << op.help()` will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.
 
 
 ## Example
@@ -83,16 +83,16 @@ int main(int argc, char **argv)
 	OptionParser op("Allowed options");
 	auto help_option     = op.add<Switch>("h", "help", "produce help message");
 	auto verbose_option  = op.add<Switch>("v", "verbose", "be verbose", &v);
-	auto hidden_option   = op.add<Switch, Attribute::hidden>("x", "", "hidden option");
+	auto hidden_option   = op.add<Switch, Visibility::hidden>("x", "", "hidden option");
 	auto double_option   = op.add<Value<double>>("d", "double", "test for double values", 3.14159265359);
 	auto float_option    = op.add<Value<float>>("f", "float", "test for float values", 2.71828182845f, &f);
 	                       op.add<Value<int>>("i", "int", "test for int value w/o option", 23, &i);
 	auto string_option   = op.add<Value<string>>("s", "string", "test for string values");
 	auto implicit_int_option = op.add<Implicit<int>>("m", "implicit", "implicit test", 42);
-	auto advanced_option = op.add<Switch, Attribute::advanced>("", "advanced", "advanced option");
-	auto expert_option   = op.add<Switch, Attribute::expert>("", "expert", "expert option");
+	auto advanced_option = op.add<Switch, Visibility::advanced>("", "advanced", "advanced option");
+	auto expert_option   = op.add<Switch, Visibility::expert>("", "expert", "expert option");
 	auto inactive_option = op.add<Switch>("", "inactive", "inactive option");
-	inactive_option->set_attribute(Attribute::inactive);
+	inactive_option->set_visibility(Visibility::inactive);
 	implicit_int_option->assign_to(&m);
 
 	op.parse(argc, argv);
@@ -101,9 +101,9 @@ int main(int argc, char **argv)
 	if (help_option->count() == 1)
 		cout << op << "\n";
 	else if (help_option->count() == 2)
-		cout << op.help(Attribute::advanced) << "\n";
+		cout << op.help(Visibility::advanced) << "\n";
 	else if (help_option->count() > 2)
-		cout << op.help(Attribute::expert) << "\n";
+		cout << op.help(Visibility::expert) << "\n";
 
 	// show all non option arguments (those without "-o" or "--option")
 	for (const auto& non_option_arg: op.non_option_args())
