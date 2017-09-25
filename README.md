@@ -32,14 +32,12 @@ op.parse(argc, argv);
 // print auto-generated help message
 if (help_option->is_set()) == 1)
 	cout << op << "\n";
-cout << "string_option - is_set: " << string_option->is_set() 
-     << ", value: " << string_option->value() << "\n";
-cout << "implicit_int  - is_set: " << implicit_int->is_set() 
-     << ", value: " << implicit_int->value() << "\n";
+cout << "string_option - is_set: " << string_option->is_set() << ", value: " << string_option->value() << "\n";
+cout << "implicit_int  - is_set: " << implicit_int->is_set() << ", value: " << implicit_int->value() << "\n";
 ```
 Options can be set multiple times on command line. Use `count()` and `value(n)` to access them:
 ```C++
-cout << "string_option - is_set: " << string_option->is_set() << ", count: " << string_option->count() << "\n";
+cout << "string_option - count: " << string_option->count() << "\n";
 if (string_option->is_set())
 {
 	for (size_t n=0; n<string_option->count(); ++n)
@@ -49,14 +47,14 @@ if (string_option->is_set())
   
 Every option type can have a default value:
 ```C++
-auto string_option = op.add<Value<std::string>>("s", "string", "some string value", "default string");
+auto string_option = op.add<Value<std::string>>("s", "string", "some string value", "default value");
 ```
-if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be `default string` 
+if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be `default value` 
   
 The value of an option can be directly assigned to a variable:
 ```C++
 std::string s;
-/*auto string_option =*/ op.add<Value<std::string>>("s", "string", "some string value", "default string", &s);
+/*auto string_option =*/ op.add<Value<std::string>>("s", "string", "some string value", "default value", &s);
 ```
 The variable `s` will carry the same value as `string_option.value()`, and thus the declaration of `string_option` can be omitted.  
   
