@@ -2,7 +2,7 @@
 
 Program Options Parser Library
 
-popl is a C++ command line arguments parser that supports the same options as GNU's `getopt` and thus closely follows the POSIX guidelines for the command-line options of a program.
+popl is a C++ command line arguments parser that supports the same set of options as GNU's `getopt` and thus closely follows the POSIX guidelines for the command-line options of a program.
 
 ## Features
 * Single header file implementation. Simply include and use it!
@@ -11,31 +11,33 @@ popl is a C++ command line arguments parser that supports the same options as GN
 * Supports the same set of options as GNU's `getopt`: short options, long options, non-option arguments, ...
 * Templatized option parsing: arguments are directly casted into the desired target type
 * Automatic creation of a usage message
-* Easy to use: no strange braces syntax, but one typesafe object for each command line option
+* Easy to use: no strange braces syntax, but for each command line option one typesafe object 
 
 ## Howto
-Key object is the `OptionParser`, which is populated with different options types:
+Key object is `OptionParser`, which is populated with different option types:
 * `Value<T>` Option with argument  
 * `Switch` Option without argument  
 * `Implicit<T>` Option with optional argument (using an implicit value if no argument is given)  
 
-Next, the OptionParser will parse the command line (by passing `argc` and `argv`) and fill the option objects.  
+Next, OptionParser will parse the command line (by passing `argc` and `argv`) and fill the option objects.  
 Each option type is initialized with a short option, long option and a help message.  
 Basic usage example:
 ```C++
 OptionParser op("Allowed options");
 auto help_option   = op.add<Switch>("h", "help", "produce help message");
-auto string_option = op.add<Value<std::string>>("s", "string", "test for string values");
-auto implicit_int  = op.add<Implicit<int>>("m", "implicit", "implicit test", 42);
+auto string_option = op.add<Value<std::string>>("s", "string", "some string value");
+auto implicit_int  = op.add<Implicit<int>>("m", "implicit", "implicit value", 42);
 op.parse(argc, argv);
 
 // print auto-generated help message
 if (help_option->is_set()) == 1)
 	cout << op << "\n";
-cout << "string_option - is_set: " << string_option->is_set() << ", count: " << string_option->value() << "\n";
-cout << "implicit_int  - is_set: " << implicit_int->is_set() << ", value: " << implicit_int_option->value() << "\n";
+cout << "string_option - is_set: " << string_option->is_set() 
+     << ", value: " << string_option->value() << "\n";
+cout << "implicit_int  - is_set: " << implicit_int->is_set() 
+     << ", value: " << implicit_int->value() << "\n";
 ```
-Options can be set multiple times:
+Options can be set multiple times on command line. Use `count()` and `value(n)` to access them:
 ```C++
 cout << "string_option - is_set: " << string_option->is_set() << ", count: " << string_option->count() << "\n";
 if (string_option->is_set())
@@ -47,24 +49,24 @@ if (string_option->is_set())
   
 Every option type can have a default value:
 ```C++
-auto string_option = op.add<Value<std::string>>("s", "string", "test for string values", "default string");
+auto string_option = op.add<Value<std::string>>("s", "string", "some string value", "default string");
 ```
-if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be "default string"  
+if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be `default string` 
   
-The result of an option can be directly assigned to a variable:
+The value of an option can be directly assigned to a variable:
 ```C++
 std::string s;
-/*auto string_option =*/ op.add<Value<std::string>>("s", "string", "test for string values", "default string", &s);
+/*auto string_option =*/ op.add<Value<std::string>>("s", "string", "some string value", "default string", &s);
 ```
-if set on command line, `s` will carry the specified value otherwise it will be "default string"  
+The variable `s` will carry the same value as `string_option.value()`, and thus the declaration of `string_option` can be omitted.  
   
-Options can be hidden in the auto-created help message, or classified as "advanced", or "expert"
+Options have a `Visibility`: they can be hidden in the auto-created help message, or classified as "advanced", or "expert":
 ```C++
-auto string_option = op.add<Value<std::string>>("s", "string", "test for string values");
+auto string_option = op.add<Value<std::string>>("s", "string", "some string value");
 auto advanced_int  = op.add<Value<int, Visibility::advanced>>("i", "integer", "advanced integer value");
 auto hidden_bool   = op.add<Swtich, Visibility::hidden>("", "hidden", "hidden flag");
 ```
-Now `cout << op.help()` will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.
+Now `cout << op.help()` (same as `cout << op`) will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.
 
 
 ## Example
