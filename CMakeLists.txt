@@ -11,7 +11,7 @@
 
 cmake_minimum_required(VERSION 2.4) 
 
-project(popl_test)
+project(popl_example)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -20,8 +20,8 @@ include_directories(
 	"include"
 )
 
-add_executable(popl_test
-	popl_test.cpp
+add_executable(popl_example
+	popl_example.cpp
 )
 
 
