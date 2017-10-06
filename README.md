@@ -21,7 +21,7 @@ Key object is `OptionParser`, which is populated with different option types:
 
 Next, OptionParser will parse the command line (by passing `argc` and `argv`) and fill the option objects.  
 Each option type is initialized with a short option, long option and a help message.  
-Basic usage example:
+### Basic usage example
 ```C++
 OptionParser op("Allowed options");
 auto help_option   = op.add<Switch>("h", "help", "produce help message");
@@ -35,6 +35,7 @@ if (help_option->is_set()) == 1)
 cout << "string_option - is_set: " << string_option->is_set() << ", value: " << string_option->value() << "\n";
 cout << "implicit_int  - is_set: " << implicit_int->is_set() << ", value: " << implicit_int->value() << "\n";
 ```
+### Multiple definition
 Options can be set multiple times on command line. Use `count()` and `value(n)` to access them:
 ```C++
 cout << "string_option - count: " << string_option->count() << "\n";
@@ -45,23 +46,26 @@ if (string_option->is_set())
 }
 ```
   
+### Default values
 Every option type can have a default value:
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "some string value", "default value");
 ```
 if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be `default value` 
   
-The value of an option can be directly assigned to a variable:
+### Assigning to a variable
+The argument of an option can be directly assigned to a variable:
 ```C++
 std::string s;
 /*auto string_option =*/ op.add<Value<std::string>>("s", "string", "some string value", "default value", &s);
 ```
 The variable `s` will carry the same value as `string_option.value()`, and thus the declaration of `string_option` can be omitted.  
   
+### Visibility of an option
 Options have a `Visibility`: they can be hidden in the auto-created help message, or classified as "advanced", or "expert":
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "some string value");
-auto advanced_int  = op.add<Value<int, Visibility::advanced>>("i", "integer", "advanced integer value");
+auto advanced_int  = op.add<Value<int>, Visibility::advanced>("i", "integer", "advanced integer value");
 auto hidden_bool   = op.add<Swtich, Visibility::hidden>("", "hidden", "hidden flag");
 ```
 Now `cout << op.help()` (same as `cout << op`) will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.
