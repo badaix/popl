@@ -2,6 +2,8 @@
 
 Program Options Parser Library
 
+[![Build Status](https://travis-ci.org/badaix/popl.svg?branch=master)](https://travis-ci.org/badaix/popl)
+
 popl is a C++ command line arguments parser that supports the same set of options as GNU's `getopt` and thus closely follows the POSIX guidelines for the command-line options of a program.
 
 ## Features
