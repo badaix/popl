@@ -1,0 +1,21 @@
+language: cpp
+compiler:
+  - gcc
+matrix:
+  include:
+    # build on ubuntu
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - build-essential cmake
+    # build on osx
+    - os: osx
+      osx_image: xcode9.1
+before_install:
+    - eval "${MATRIX_EVAL}"
+script:
+  - mkdir build
+  - cd build
+  - cmake .. && make
