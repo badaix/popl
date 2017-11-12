@@ -3,7 +3,7 @@
     (  _ \ /  \(  _ \(  )  
      ) __/(  O )) __// (_/\
     (__)   \__/(__)  \____/
-    version 0.8.0
+    version 1.0.0
     https://github.com/badaix/popl
 
 	This file is part of popl (program options parser lib)
@@ -31,7 +31,7 @@
 namespace popl
 {
 
-#define POPL_VERSION "0.8.0"
+#define POPL_VERSION "1.0.0"
 
 
 enum class Argument // permitted values for its `argument_type' field...
