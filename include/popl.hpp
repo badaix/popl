@@ -76,6 +76,7 @@ public:
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value) = 0;
+	virtual void clear() = 0;
 	virtual std::string to_string() const;
 
 	std::string short_option_;
@@ -109,6 +110,7 @@ public:
 protected:
 	virtual void update_reference();
 	virtual void add_value(const T& value);
+	virtual void clear() override;
 
 	unsigned int count_;
 	T* assign_to_;
@@ -185,6 +187,7 @@ public:
 
 protected:
 	void parse(const std::string& what_option, const char* value) override;
+	virtual void clear() override;
 	std::string to_string() const override;
 };
 
@@ -364,6 +367,12 @@ inline void ValueTemplate<T>::set_value(const T& value)
 	add_value(value);
 }
 
+template<class T>
+inline void ValueTemplate<T>::clear()
+{
+	values_.clear();
+	count_ = 0;
+}
 
 template<class T>
 inline T ValueTemplate<T>::value(size_t idx) const
@@ -563,16 +572,19 @@ inline std::string Implicit<T>::to_string() const
 inline Switch::Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to) :
 	ValueTemplate<bool>(short_option, long_option, description, assign_to)
 {
-	if (assign_to != nullptr)
-		*assign_to = false;
 }
-
 
 inline void Switch::parse(const std::string& /*what_option*/, const char* /*value*/)
 {
+	ValueTemplate<bool>::clear();
 	add_value(true);
 }
 
+inline void Switch::clear()
+{
+	ValueTemplate<bool>::clear();
+	add_value(false);
+}
 
 inline Argument Switch::argument_type() const
 {
@@ -696,6 +708,9 @@ inline void OptionParser::parse(int argc, const char * const * argv)
 {
 	unknown_options_.clear();
 	non_option_args_.clear();
+ 	for (auto& opt : options_)
+		opt->clear();
+
 	for (int n=1; n<argc; ++n)
 	{
 		const std::string arg(argv[n]);
