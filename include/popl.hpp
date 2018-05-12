@@ -210,7 +210,7 @@ public:
 	template<typename T, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
 
-	void parse(int argc, char **argv);
+	void parse(int argc, const char * const * argv);
 	std::string help(const Visibility& max_visibility = Visibility::normal) const;
 	std::string description() const;
 	const std::vector<Option_ptr>& options() const;
@@ -691,7 +691,7 @@ inline std::shared_ptr<T> OptionParser::get_option(char short_opt) const
 }
 
 
-inline void OptionParser::parse(int argc, char **argv)
+inline void OptionParser::parse(int argc, const char * const * argv)
 {
 	unknown_options_.clear();
 	non_option_args_.clear();
