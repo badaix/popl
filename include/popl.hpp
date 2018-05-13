@@ -842,10 +842,9 @@ inline std::string OptionParser::help(const Visibility& max_visibility) const
 
 
 
-static std::ostream& operator<<(std::ostream& out, const OptionParser& op)
+static inline std::ostream& operator<<(std::ostream& out, const OptionParser& op)
 {
-	out << op.help();
-	return out;
+	return out << op.help();
 }
 
 
