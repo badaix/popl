@@ -88,16 +88,17 @@ protected:
 
 
 
-/// Abstract Base class for Options with runtime data
+/// Value option with optional default value
 /**
- * Base class for Options with runtime data
- * Stores a value of type T with getter and setter
+ * Value option with optional default value
+ * If set, it requires an argument
  */
 template<class T>
-class ValueTemplate : public Option
+class Value : public Option
 {
 public:
-	ValueTemplate(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to = nullptr);
+	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
+	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
 	unsigned int count() const;
 	bool is_set() const;
@@ -107,7 +108,17 @@ public:
 	void set_value(const T& value);
 	virtual T value(size_t idx = 0) const;
 
+	void set_default(const T& value);
+	bool has_default() const;
+	T get_default() const;
+
+	Argument argument_type() const override;
+
 protected:
+	void parse(const std::string& what_option, const char* value) override;
+	std::string to_string() const override;
+	std::unique_ptr<T> default_;
+
 	virtual void update_reference();
 	virtual void add_value(const T& value);
 	virtual void clear() override;
@@ -115,35 +126,6 @@ protected:
 	unsigned int count_;
 	T* assign_to_;
 	std::vector<T> values_;
-};
-
-
-
-
-/// Value option with optional default value
-/**
- * Value option with optional default value
- * If set, it requires an argument
- */
-template<class T>
-class Value : public ValueTemplate<T>
-{
-public:
-	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
-	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
-
-	void set_default(const T& value);
-	bool has_default() const;
-	T get_default() const;
-
-	T value(size_t idx = 0) const override;
-	Argument argument_type() const override;
-
-protected:
-	void parse(const std::string& what_option, const char* value) override;
-	void update_reference() override;
-	std::string to_string() const override;
-	std::unique_ptr<T> default_;
 };
 
 
@@ -178,11 +160,12 @@ protected:
  * Does not require an argument
  * Can be either set or not set
  */
-class Switch : public ValueTemplate<bool>
+class Switch : public Value<bool>
 {
 public:
 	Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to = nullptr);
 
+	void set_default(const bool& value) = delete;
 	Argument argument_type() const override;
 
 protected:
@@ -308,34 +291,42 @@ inline std::string Option::to_string() const
 
 
 
-/// ValueTemplate implementation /////////////////////////////////
+/// Value implementation /////////////////////////////////
 
 template<class T>
-inline ValueTemplate<T>::ValueTemplate(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to) :
+inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
 	Option(short_option, long_option, description),
 	count_(0),
-	assign_to_(assign_to)
+	assign_to_(nullptr)
 {
-	update_reference();
 }
 
 
 template<class T>
-inline unsigned int ValueTemplate<T>::count() const
+inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to) :
+	Value<T>(short_option, long_option, description)
+{
+	assign_to_ = assign_to;
+	set_default(default_val);
+}
+
+
+template<class T>
+inline unsigned int Value<T>::count() const
 {
 	return count_;
 }
 
 
 template<class T>
-inline bool ValueTemplate<T>::is_set() const
+inline bool Value<T>::is_set() const
 {
 	return (count() > 0);
 }
 
 
 template<class T>
-inline void ValueTemplate<T>::assign_to(T* var)
+inline void Value<T>::assign_to(T* var)
 {
 	assign_to_ = var;
 	update_reference();
@@ -343,24 +334,7 @@ inline void ValueTemplate<T>::assign_to(T* var)
 
 
 template<class T>
-void ValueTemplate<T>::update_reference()
-{
-	if ((assign_to_) && is_set())
-		*assign_to_ = value();
-}
-
-
-template<class T>
-inline void ValueTemplate<T>::add_value(const T& value)
-{
-	values_.push_back(value);
-	++count_;
-	update_reference();
-}
-
-
-template<class T>
-inline void ValueTemplate<T>::set_value(const T& value)
+inline void Value<T>::set_value(const T& value)
 {
 	clear();
 	add_value(value);
@@ -368,16 +342,11 @@ inline void ValueTemplate<T>::set_value(const T& value)
 
 
 template<class T>
-inline void ValueTemplate<T>::clear()
+inline T Value<T>::value(size_t idx) const
 {
-	values_.clear();
-	count_ = 0;
-}
+	if (!this->is_set() && default_)
+		return *default_;
 
-
-template<class T>
-inline T ValueTemplate<T>::value(size_t idx) const
-{
 	if (!is_set() || (idx >= count_))
 	{
 		std::stringstream optionStr;
@@ -400,24 +369,6 @@ inline T ValueTemplate<T>::value(size_t idx) const
 
 
 
-
-/// Value implementation /////////////////////////////////
-
-template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
-	ValueTemplate<T>(short_option, long_option, description, nullptr)
-{
-}
-
-
-template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to) :
-	ValueTemplate<T>(short_option, long_option, description, assign_to)
-{
-	set_default(default_val);
-}
-
-
 template<class T>
 inline void Value<T>::set_default(const T& value)
 {
@@ -430,7 +381,7 @@ inline void Value<T>::set_default(const T& value)
 template<class T>
 inline bool Value<T>::has_default() const
 {
-	return this->default_;
+	return (this->default_ != nullptr);
 }
 
 
@@ -440,26 +391,6 @@ inline T Value<T>::get_default() const
 	if (!has_default())
 		throw std::runtime_error("no default value set");
 	return *this->default_;
-}
-
-
-template<class T>
-inline void Value<T>::update_reference()
-{
-	if (this->assign_to_)
-	{
-		if (this->is_set() || default_)
-			*this->assign_to_ = value();
-	}
-}
-
-
-template<class T>
-inline T Value<T>::value(size_t idx) const
-{
-	if (!this->is_set() && default_)
-		return *default_;
-	return ValueTemplate<T>::value(idx);
 }
 
 
@@ -529,6 +460,34 @@ inline std::string Value<T>::to_string() const
 }
 
 
+template<class T>
+void Value<T>::update_reference()
+{
+	if (this->assign_to_)
+	{
+		if (this->is_set() || default_)
+			*this->assign_to_ = value();
+	}
+}
+
+
+template<class T>
+inline void Value<T>::add_value(const T& value)
+{
+	values_.push_back(value);
+	++count_;
+	update_reference();
+}
+
+
+template<class T>
+inline void Value<T>::clear()
+{
+	values_.clear();
+	count_ = 0;
+	update_reference();
+}
+
 
 
 /// Implicit implementation /////////////////////////////////
@@ -571,7 +530,7 @@ inline std::string Implicit<T>::to_string() const
 /// Switch implementation /////////////////////////////////
 
 inline Switch::Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to) :
-	ValueTemplate<bool>(short_option, long_option, description, assign_to)
+	Value<bool>(short_option, long_option, description, false, assign_to)
 {
 }
 
