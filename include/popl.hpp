@@ -43,6 +43,14 @@ enum class Argument // permitted values for its `argument_type' field...
 };
 
 
+enum class Type // permitted values for its `argument_type' field...
+{
+	kValue = 0,  // option never takes an argument
+	kImplicit,   // option always requires an argument
+	kSwitch      // option may take an argument
+};
+
+
 enum class Visibility
 {
 	inactive = 0,
@@ -76,7 +84,7 @@ public:
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value) = 0;
-	virtual std::string to_string() const;
+	virtual void get_help_info(Type& type, bool& has_default, std::string& default_value) const = 0;
 
 	std::string short_option_;
 	std::string long_option_;
@@ -140,7 +148,7 @@ public:
 protected:
 	void parse(const std::string& what_option, const char* value) override;
 	void update_reference() override;
-	std::string to_string() const override;
+	void get_help_info(Type& type, bool& has_default, std::string& default_value) const override;
 	std::unique_ptr<T> default_;
 };
 
@@ -164,7 +172,7 @@ public:
 
 protected:
 	void parse(const std::string& what_option, const char* value) override;
-	std::string to_string() const override;
+	void get_help_info(Type& type, bool& has_default, std::string& default_value) const override;
 };
 
 
@@ -185,7 +193,7 @@ public:
 
 protected:
 	void parse(const std::string& what_option, const char* value) override;
-	std::string to_string() const override;
+	void get_help_info(Type& type, bool& has_default, std::string& default_value) const override;
 };
 
 
@@ -202,6 +210,7 @@ using Option_ptr = std::shared_ptr<Option>;
  */
 class OptionParser
 {
+friend class HelpPrinter;
 public:
 	explicit OptionParser(std::string description = "");
 	virtual ~OptionParser() = default;
@@ -231,6 +240,17 @@ protected:
 
 	Option_ptr find_option(const std::string& long_opt) const;
 	Option_ptr find_option(char short_opt) const;
+};
+
+
+
+class HelpPrinter
+{
+public:
+	HelpPrinter(const OptionParser& option_parser);
+	virtual ~HelpPrinter() = default;
+
+	std::string help(const Visibility& max_visibility = Visibility::normal) const;
 };
 
 
@@ -281,26 +301,6 @@ inline void Option::set_visibility(const Visibility& visibility)
 inline Visibility Option::visibility() const
 {
 	return visibility_;
-}
-
-
-
-inline std::string Option::to_string() const
-{
-	std::stringstream line;
-	if (short_option() != 0)
-	{
-		line << "  -" << short_option();
-		if (!long_option().empty())
-			line << ", ";
-	}
-	else
-		line << "  ";
-
-	if (!long_option().empty())
-		line << "--" << long_option();
-
-	return line.str();
 }
 
 
@@ -420,7 +420,7 @@ inline void Value<T>::set_default(const T& value)
 template<class T>
 inline bool Value<T>::has_default() const
 {
-	return this->default_;
+	return (this->default_ != nullptr);
 }
 
 
@@ -504,19 +504,18 @@ inline void Value<T>::parse(const std::string& what_option, const char* value)
 
 
 template<class T>
-inline std::string Value<T>::to_string() const
+inline void Value<T>::get_help_info(Type& type, bool& has_default, std::string& default_value) const
 {
-	std::stringstream ss;
-	ss << Option::to_string() << " arg";
-	if (default_)
+	type = Type::kValue;
+	has_default = this->has_default();
+	if (has_default)
 	{
-		std::stringstream defaultStr;
-		defaultStr << *default_;
-		if (!defaultStr.str().empty())
-			ss << " (=" << *default_ << ")";
+		std::stringstream default_string;
+		default_string << get_default();
+		default_value = default_string.str();
 	}
-	return ss.str();
 }
+
 
 
 
@@ -548,11 +547,11 @@ inline void Implicit<T>::parse(const std::string& what_option, const char* value
 
 
 template<class T>
-inline std::string Implicit<T>::to_string() const
+inline void Implicit<T>::get_help_info(Type& type, bool& has_default, std::string& default_value) const
 {
-	std::stringstream ss;
-	ss << Option::to_string() << " [=arg(=" << *this->default_ << ")]";
-	return ss.str();
+	type = Type::kImplicit;
+	Type placeholder_type;
+	Value<T>::get_help_info(placeholder_type, has_default, default_value);
 }
 
 
@@ -580,9 +579,10 @@ inline Argument Switch::argument_type() const
 }
 
 
-inline std::string Switch::to_string() const
+inline void Switch::get_help_info(Type& type, bool& has_default, std::string& default_value) const
 {
-	return Option::to_string();
+	type = Type::kSwitch;
+	has_default = false;
 }
 
 
@@ -800,10 +800,62 @@ inline std::string OptionParser::help(const Visibility& max_visibility) const
 	if (!description_.empty())
 		s << description_ << ":\n";
 
-	size_t optionRightMargin(20);
+/*	size_t optionRightMargin(20);
 	const size_t maxDescriptionLeftMargin(40);
+*/
 //	const size_t descriptionRightMargin(80);
 
+
+/*
+inline std::string Option::to_string() const
+{
+	std::stringstream line;
+	if (short_option() != 0)
+	{
+		line << "  -" << short_option();
+		if (!long_option().empty())
+			line << ", ";
+	}
+	else
+		line << "  ";
+
+	if (!long_option().empty())
+		line << "--" << long_option();
+
+	return line.str();
+}
+
+inline std::string Value<T>::to_string() const
+{
+	std::stringstream ss;
+	ss << Option::to_string() << " arg";
+	if (default_)
+	{
+		std::stringstream defaultStr;
+		defaultStr << *default_;
+		if (!defaultStr.str().empty())
+			ss << " (=" << *default_ << ")";
+	}
+	return ss.str();
+}
+
+template<class T>
+inline std::string Implicit<T>::to_string() const
+{
+	std::stringstream ss;
+	ss << Option::to_string() << " [=arg(=" << *this->default_ << ")]";
+	return ss.str();
+}
+
+inline std::string Switch::to_string() const
+{
+	return Option::to_string();
+}
+
+*/
+
+
+/*
 	for (const auto& option: options_)
 		optionRightMargin = std::max(optionRightMargin, option->to_string().size() + 2);
 	optionRightMargin = std::min(maxDescriptionLeftMargin - 2, optionRightMargin);
@@ -814,6 +866,39 @@ inline std::string OptionParser::help(const Visibility& max_visibility) const
 			(option->visibility() > max_visibility))
 			continue;
 		std::string optionStr = option->to_string();
+
+		if (option->type() == Type::kImplicit)
+		{
+			std::cout << "Implicit: ";
+		}
+		else if (option->type() == Type::kSwitch)
+		{
+			std::cout << "Switch:   ";
+		}
+		else if (option->type() == Type::kValue)
+		{
+			std::cout << "Value:    ";
+		}
+
+		if (option->short_option() != 0)
+		{
+			std::cout << "  -" << option->short_option();
+			if (!option->long_option().empty())
+				std::cout << ", ";
+		}
+		else
+			std::cout << "  ";
+
+		if (!option->long_option().empty())
+			std::cout << "--" << option->long_option();
+
+		if (option->has_default())
+			std::cout << Option::to_string() << " [=arg(=" << *this->default_ << ")]";
+
+		std::cout << "\n";
+
+
+
 		if (optionStr.size() < optionRightMargin)
 			optionStr.resize(optionRightMargin, ' ');
 		else
@@ -837,8 +922,21 @@ inline std::string OptionParser::help(const Visibility& max_visibility) const
 	}
 
 	return s.str();
+*/
+	return "";
 }
 
+
+HelpPrinter::HelpPrinter(const OptionParser& option_parser)
+{
+
+}
+
+
+std::string HelpPrinter::help(const Visibility& max_visibility) const
+{
+
+}
 
 
 
