@@ -73,6 +73,8 @@ public:
 	Visibility visibility() const;
 
 	virtual Argument argument_type() const = 0;
+	virtual bool is_set() const = 0;
+	virtual bool is_mandatory() const = 0;
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value) = 0;
@@ -100,7 +102,8 @@ public:
 	ValueTemplate(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to = nullptr);
 
 	unsigned int count() const;
-	bool is_set() const;
+	bool is_set() const override;
+	bool is_mandatory() const override;
 
 	void assign_to(T* var);
 
@@ -118,7 +121,18 @@ protected:
 };
 
 
+template<class T>
+class MandatoryValue : public ValueTemplate<T>
+{
+public:
+	MandatoryValue(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to = nullptr);
 
+	Argument argument_type() const override;
+	bool is_mandatory() const override;
+protected:
+	void parse(const std::string& what_option, const char* value) override;
+  	void update_reference() override;
+};
 
 /// Value option with optional default value
 /**
@@ -126,7 +140,7 @@ protected:
  * If set, it requires an argument
  */
 template<class T>
-class Value : public ValueTemplate<T>
+class Value : public MandatoryValue<T>
 {
 public:
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
@@ -137,11 +151,9 @@ public:
 	T get_default() const;
 
 	T value(size_t idx = 0) const override;
-	Argument argument_type() const override;
-
+	bool is_mandatory() const override;
 protected:
-	void parse(const std::string& what_option, const char* value) override;
-	void update_reference() override;
+  	void update_reference() override;
 	std::string to_string() const override;
 	std::unique_ptr<T> default_;
 };
@@ -333,6 +345,11 @@ inline bool ValueTemplate<T>::is_set() const
 	return (count() > 0);
 }
 
+template<class T>
+inline bool ValueTemplate<T>::is_mandatory() const
+{
+	return false;
+}
 
 template<class T>
 inline void ValueTemplate<T>::assign_to(T* var)
@@ -398,90 +415,22 @@ inline T ValueTemplate<T>::value(size_t idx) const
 	return values_[idx];
 }
 
-
-
-
-/// Value implementation /////////////////////////////////
+/// MandatoryValue implementation /////////////////////////////////
 
 template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
-	ValueTemplate<T>(short_option, long_option, description, nullptr)
-{
-}
-
-
-template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to) :
+inline MandatoryValue<T>::MandatoryValue(const std::string& short_option, const std::string& long_option, const std::string& description, T* assign_to) :
 	ValueTemplate<T>(short_option, long_option, description, assign_to)
 {
-	set_default(default_val);
 }
-
 
 template<class T>
-inline void Value<T>::set_default(const T& value)
+inline bool MandatoryValue<T>::is_mandatory() const
 {
-	this->default_.reset(new T);
-	*this->default_ = value;
-	update_reference();
+	return true;
 }
-
 
 template<class T>
-inline bool Value<T>::has_default() const
-{
-	return this->default_;
-}
-
-
-template<class T>
-inline T Value<T>::get_default() const
-{
-	if (!has_default())
-		throw std::runtime_error("no default value set");
-	return *this->default_;
-}
-
-
-template<class T>
-inline void Value<T>::update_reference()
-{
-	if (this->assign_to_)
-	{
-		if (this->is_set() || default_)
-			*this->assign_to_ = value();
-	}
-}
-
-
-template<class T>
-inline T Value<T>::value(size_t idx) const
-{
-	if (!this->is_set() && default_)
-		return *default_;
-	return ValueTemplate<T>::value(idx);
-}
-
-
-template<class T>
-inline Argument Value<T>::argument_type() const
-{
-	return Argument::required;
-}
-
-
-template<>
-inline void Value<std::string>::parse(const std::string& what_option, const char* value)
-{
-	if (strlen(value) == 0)
-		throw std::invalid_argument("missing argument for " + what_option);
-
-	add_value(value);
-}
-
-
-template<class T>
-inline void Value<T>::parse(const std::string& what_option, const char* value)
+inline void MandatoryValue<T>::parse(const std::string& what_option, const char* value)
 {
 	T parsed_value;
 	std::string strValue;
@@ -512,6 +461,95 @@ inline void Value<T>::parse(const std::string& what_option, const char* value)
 	this->add_value(parsed_value);
 }
 
+template<>
+inline void MandatoryValue<std::string>::parse(const std::string& what_option, const char* value)
+{
+	if (strlen(value) == 0)
+		throw std::invalid_argument("missing argument for " + what_option);
+
+	add_value(value);
+}
+
+template<class T>
+inline Argument MandatoryValue<T>::argument_type() const
+{
+	return Argument::required;
+}
+
+template<class T>
+inline void MandatoryValue<T>::update_reference()
+{
+	if (this->assign_to_)
+	{
+		if (this->is_set())
+			*this->assign_to_ = this->value();
+	}
+}
+
+/// Value implementation /////////////////////////////////
+
+template<class T>
+inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
+	MandatoryValue<T>(short_option, long_option, description, nullptr)
+{
+}
+
+template<class T>
+inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to) :
+	MandatoryValue<T>(short_option, long_option, description, assign_to)
+{
+	set_default(default_val);
+}
+
+
+template<class T>
+inline void Value<T>::set_default(const T& value)
+{
+	this->default_.reset(new T);
+	*this->default_ = value;
+	update_reference();
+}
+
+
+template<class T>
+inline bool Value<T>::has_default() const
+{
+	return this->default_;
+}
+
+
+template<class T>
+inline T Value<T>::get_default() const
+{
+	if (!has_default())
+		throw std::runtime_error("no default value set");
+	return *this->default_;
+}
+
+template<class T>
+inline bool Value<T>::is_mandatory() const
+{
+	return false;
+}
+
+template<class T>
+inline void Value<T>::update_reference()
+{
+	if (this->assign_to_)
+	{
+		if (this->is_set() || default_)
+			*this->assign_to_ = value();
+	}
+}
+
+
+template<class T>
+inline T Value<T>::value(size_t idx) const
+{
+	if (!this->is_set() && default_)
+		return *default_;
+	return ValueTemplate<T>::value(idx);
+}
 
 template<class T>
 inline std::string Value<T>::to_string() const
@@ -527,9 +565,6 @@ inline std::string Value<T>::to_string() const
 	}
 	return ss.str();
 }
-
-
-
 
 /// Implicit implementation /////////////////////////////////
 
@@ -797,6 +832,9 @@ inline void OptionParser::parse(int argc, const char * const * argv)
 			non_option_args_.push_back(arg);
 		}
 	}
+	for (auto& opt : options_)
+		if (opt->is_mandatory() && !opt->is_set())
+			throw std::invalid_argument("option \"" + opt->long_option() + "\" must have a value");
 }
 
 
