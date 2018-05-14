@@ -43,13 +43,14 @@ enum class Argument // permitted values for its `argument_type' field...
 };
 
 
-enum class Visibility
+enum class Attribute
 {
 	inactive = 0,
 	hidden = 1,
-	normal = 2,
-	advanced = 3,
-	expert = 4
+	required = 2,
+	optional = 3,
+	advanced = 4,
+	expert = 5
 };
 
 
@@ -68,11 +69,13 @@ public:
 	char short_option() const;
 	std::string long_option() const;
 	std::string description() const;
+	virtual bool get_default(std::ostream& out) const = 0;
 
-	void set_visibility(const Visibility& visibility);
-	Visibility visibility() const;
+	void set_attribute(const Attribute& attribute);
+	Attribute attribute() const;
 
 	virtual Argument argument_type() const = 0;
+	virtual bool is_set() const = 0;
 
 protected:
 	virtual void parse(const std::string& what_option, const char* value) = 0;
@@ -82,7 +85,7 @@ protected:
 	std::string short_option_;
 	std::string long_option_;
 	std::string description_;
-	Visibility visibility_;
+	Attribute attribute_;
 };
 
 
@@ -101,7 +104,7 @@ public:
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
 	unsigned int count() const;
-	bool is_set() const;
+	bool is_set() const override;
 
 	void assign_to(T* var);
 
@@ -111,6 +114,7 @@ public:
 	void set_default(const T& value);
 	bool has_default() const;
 	T get_default() const;
+	bool get_default(std::ostream& out) const;
 
 	Argument argument_type() const override;
 
@@ -191,13 +195,13 @@ public:
 	explicit OptionParser(std::string description = "");
 	virtual ~OptionParser() = default;
 
-	template<typename T, Visibility visibility, typename... Ts>
+	template<typename T, Attribute attribute, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
 	template<typename T, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
 
 	void parse(int argc, const char * const argv[]);
-	std::string help(const Visibility& max_visibility = Visibility::normal) const;
+	std::string help(const Attribute& max_attribute = Attribute::optional) const;
 	std::string description() const;
 	const std::vector<Option_ptr>& options() const;
 	const std::vector<std::string>& non_option_args() const;
@@ -227,7 +231,7 @@ inline Option::Option(const std::string& short_option, const std::string& long_o
 	short_option_(short_option),
 	long_option_(long_option),
 	description_(std::move(description)),
-	visibility_(Visibility::normal)
+	attribute_(Attribute::optional)
 {
 	if (short_option.size() > 1)
 		throw std::invalid_argument("length of short option must be <= 1: '" + short_option + "'");
@@ -257,15 +261,15 @@ inline std::string Option::description() const
 }
 
 
-inline void Option::set_visibility(const Visibility& visibility)
+inline void Option::set_attribute(const Attribute& attribute)
 {
-	visibility_ = visibility;
+	attribute_ = attribute;
 }
 
 
-inline Visibility Option::visibility() const
+inline Attribute Option::attribute() const
 {
-	return visibility_;
+	return attribute_;
 }
 
 
@@ -391,6 +395,16 @@ inline T Value<T>::get_default() const
 	if (!has_default())
 		throw std::runtime_error("no default value set");
 	return *this->default_;
+}
+
+
+template<class T>
+inline bool Value<T>::get_default(std::ostream& out) const
+{
+	if (!has_default())
+		return false;
+	out << *this->default_;
+	return true;
 }
 
 
@@ -565,11 +579,11 @@ inline OptionParser::OptionParser(std::string description) : description_(std::m
 template<typename T, typename... Ts>
 inline std::shared_ptr<T> OptionParser::add(Ts&&... params)
 {
-	return add<T, Visibility::normal>(std::forward<Ts>(params)...);
+	return add<T, Attribute::optional>(std::forward<Ts>(params)...);
 }
 
 
-template<typename T, Visibility visibility, typename... Ts>
+template<typename T, Attribute attribute, typename... Ts>
 inline std::shared_ptr<T> OptionParser::add(Ts&&... params)
 {
 	static_assert(
@@ -585,7 +599,7 @@ inline std::shared_ptr<T> OptionParser::add(Ts&&... params)
 		if (!option->long_option().empty() && (option->long_option() == (o->long_option())))
 			throw std::invalid_argument("duplicate long option '--" + option->long_option() + "'");
 	}
-	option->set_visibility(visibility);
+	option->set_attribute(attribute);
 	options_.push_back(option);
 	return option;
 }
@@ -690,7 +704,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 			}
 
 			Option_ptr option = find_option(opt);
-			if (option && (option->visibility() == Visibility::inactive))
+			if (option && (option->attribute() == Attribute::inactive))
 				option = nullptr;
 			if (option)
 			{
@@ -722,7 +736,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 				std::string optarg;
 
 				Option_ptr option = find_option(c);
-				if (option && (option->visibility() == Visibility::inactive))
+				if (option && (option->attribute() == Attribute::inactive))
 					option = nullptr;
 				if (option)
 				{
@@ -756,15 +770,24 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 			non_option_args_.push_back(arg);
 		}
 	}
+
+	for (auto& opt : options_)
+	{
+		if ((opt->attribute() == Attribute::required) && !opt->is_set())
+		{
+			std::string option = opt->long_option().empty()?std::string(1, opt->short_option()):opt->long_option();
+			throw std::invalid_argument("option \"" + option + "\" is required");
+		}
+	}
 }
 
 
 
 
-inline std::string OptionParser::help(const Visibility& max_visibility) const
+inline std::string OptionParser::help(const Attribute& max_attribute) const
 {
-	if (max_visibility < Visibility::normal)
-		throw std::invalid_argument("visibility must be at least normal");
+	if (max_attribute < Attribute::optional)
+		throw std::invalid_argument("attribute must be at least optional");
 
 	std::stringstream s;
 	if (!description_.empty())
@@ -780,8 +803,8 @@ inline std::string OptionParser::help(const Visibility& max_visibility) const
 
 	for (const auto& option: options_)
 	{
-		if ((option->visibility() <= Visibility::hidden) || 
-			(option->visibility() > max_visibility))
+		if ((option->attribute() <= Attribute::hidden) || 
+			(option->attribute() > max_attribute))
 			continue;
 		std::string optionStr = option->to_string();
 		if (optionStr.size() < optionRightMargin)
