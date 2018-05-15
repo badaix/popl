@@ -17,7 +17,9 @@
 #ifndef POPL_HPP
 #define POPL_HPP
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif // NOMINMAX
 
 #include <cstdio>
 #include <cstring>
