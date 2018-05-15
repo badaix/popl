@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 
 	OptionParser op("Allowed options");
 	auto help_option     = op.add<Switch>("h", "help", "produce help message");
-	auto verbose_option  = op.add<Switch, Attribute::required>("v", "verbose", "be verbose", &v);
+	auto verbose_option  = op.add<Switch, Attribute::optional>("v", "verbose", "be verbose", &v);
 	auto hidden_option   = op.add<Switch, Attribute::hidden>("x", "", "hidden option");
 	auto double_option   = op.add<Value<double>>("d", "double", "test for double values", 3.14159265359);
 	auto float_option    = op.add<Value<float>>("f", "float", "test for float values", 2.71828182845f, &f);
@@ -70,6 +70,14 @@ int main(int argc, char **argv)
 	cout << "imp_int_option  - is_set: " << implicit_int_option->is_set() << ", value: " << implicit_int_option->value() << ", reference: " << m << "\n";
 	cout << "advanced_option - is_set: " << advanced_option->is_set() << ", count: " << advanced_option->count() << "\n";
 	cout << "expert_option   - is_set: " << expert_option->is_set() << ", count: " << expert_option->count() << "\n";
+
+
+	const char *ptr_array[3] = { "xxx", "-h", "-f 0.5" };
+	op.parse(3, ptr_array);
+	cout << "\n\nSecond parse:\n";
+	cout << "verbose_option  - is_set: " << verbose_option->is_set() << ", count: " << verbose_option->count() << ", reference: " << v << "\n";
+	cout << "float_option    - is_set: " << float_option->is_set() << ", value: " << float_option->value() << ", reference: " << f << "\n";
+	cout << "int_option      - is_set: " << int_option->is_set() << ", value: " << int_option->value() << ", reference: " << i << "\n";
 }
 
 
