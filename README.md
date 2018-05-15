@@ -33,7 +33,7 @@ auto implicit_int  = op.add<Implicit<int>>("m", "implicit", "implicit value", 42
 op.parse(argc, argv);
 
 // print auto-generated help message
-if (help_option->is_set()) == 1)
+if (help_option->is_set())
 	cout << op << "\n";
 cout << "string_option - is_set: " << string_option->is_set() << ", value: " << string_option->value() << "\n";
 cout << "implicit_int  - is_set: " << implicit_int->is_set() << ", value: " << implicit_int->value() << "\n";
@@ -65,13 +65,14 @@ std::string s;
 The variable `s` will carry the same value as `string_option.value()`, and thus the declaration of `string_option` can be omitted.  
   
 ### Visibility of an option
-Options have a `Visibility`: they can be hidden in the auto-created help message, or classified as "advanced", or "expert":
+Options have an `Attribute`: they can be hidden in the auto-created help message, or classified as "advanced", or "expert":
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "some string value");
-auto advanced_int  = op.add<Value<int>, Visibility::advanced>("i", "integer", "advanced integer value");
-auto hidden_bool   = op.add<Swtich, Visibility::hidden>("", "hidden", "hidden flag");
+auto advanced_int  = op.add<Value<int>, Attribute::advanced>("i", "integer", "advanced integer value");
+auto hidden_bool   = op.add<Swtich, Attribute::hidden>("", "hidden", "hidden flag");
 ```
-Now `cout << op.help()` (same as `cout << op`) will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.
+Now `cout << op.help()` (same as `cout << op`) will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.  
+Also an option can be flagged as mandatory by assigning `Attribute::required`
 
 
 ## Example
@@ -189,4 +190,21 @@ expert_option   - is_set: 0, count: 0
     .TP
     \fB-m, --implicit [=arg(=42)]\fR
     implicit test
+    ```
+  3. [Bash programmable completion](https://debian-administration.org/article/317/An_introduction_to_bash_completion_part_2)
+    ```shell
+    _foo() 
+    {
+        local cur prev opts
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+        opts="-h --help -t --test -f --float -s --string -m --implicit"
+    
+        if [[ ${cur} == -* ]] ; then
+            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            return 0
+        fi
+    }
+    complete -F _foo foo    
     ```
