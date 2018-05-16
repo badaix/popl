@@ -129,7 +129,6 @@ protected:
 	virtual void add_value(const T& value);
 	virtual void clear() override;
 
-	unsigned int count_;
 	T* assign_to_;
 	std::vector<T> values_;
 };
@@ -302,7 +301,6 @@ inline std::string Option::to_string() const
 template<class T>
 inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
 	Option(short_option, long_option, description),
-	count_(0),
 	assign_to_(nullptr)
 {
 }
@@ -320,14 +318,14 @@ inline Value<T>::Value(const std::string& short_option, const std::string& long_
 template<class T>
 inline unsigned int Value<T>::count() const
 {
-	return count_;
+	return values_.size();
 }
 
 
 template<class T>
 inline bool Value<T>::is_set() const
 {
-	return (count() > 0);
+	return !values_.empty();
 }
 
 
@@ -353,10 +351,10 @@ inline T Value<T>::value(size_t idx) const
 	if (!this->is_set() && default_)
 		return *default_;
 
-	if (!is_set() || (idx >= count_))
+	if (!is_set() || (idx >= count()))
 	{
 		std::stringstream optionStr;
-		if (!!is_set())
+		if (!is_set())
 			optionStr << "option not set: \"";
 		else
 			optionStr << "index out of range (" << idx << ") for \"";
@@ -491,7 +489,6 @@ template<class T>
 inline void Value<T>::add_value(const T& value)
 {
 	values_.push_back(value);
-	++count_;
 	update_reference();
 }
 
@@ -500,7 +497,6 @@ template<class T>
 inline void Value<T>::clear()
 {
 	values_.clear();
-	count_ = 0;
 	update_reference();
 }
 
