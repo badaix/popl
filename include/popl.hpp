@@ -800,12 +800,12 @@ inline std::string OptionParser::help(const Attribute& max_attribute) const
 
 
 
-ConsoleHelpPrinter::ConsoleHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
+inline ConsoleHelpPrinter::ConsoleHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
 {
 }
 
 
-std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
+inline std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
 {
 	std::stringstream line;
 	if (option->short_option() != 0)
@@ -840,7 +840,7 @@ std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
 }
 
 
-std::string ConsoleHelpPrinter::help(const Attribute& max_attribute) const
+inline std::string ConsoleHelpPrinter::help(const Attribute& max_attribute) const
 {
 	if (!option_parser_)
 		return "";
@@ -894,12 +894,12 @@ std::string ConsoleHelpPrinter::help(const Attribute& max_attribute) const
 
 
 
-GroffHelpPrinter::GroffHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
+inline GroffHelpPrinter::GroffHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
 {
 }
 
 
-std::string GroffHelpPrinter::to_string(Option_ptr option) const
+inline std::string GroffHelpPrinter::to_string(Option_ptr option) const
 {
 	std::stringstream line;
 	if (option->short_option() != 0)
@@ -932,7 +932,7 @@ std::string GroffHelpPrinter::to_string(Option_ptr option) const
 }
 
 
-std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
+inline std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
 {
 	if (!option_parser_)
 		return "";
@@ -960,12 +960,12 @@ std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
 
 
 
-BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name) : HelpPrinter(option_parser), program_name_(program_name)
+inline BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name) : HelpPrinter(option_parser), program_name_(program_name)
 {
 }
 
 
-std::string BashCompletionHelpPrinter::help(const Attribute& max_attribute) const
+inline std::string BashCompletionHelpPrinter::help(const Attribute& max_attribute) const
 {
 	if (!option_parser_)
 		return "";
