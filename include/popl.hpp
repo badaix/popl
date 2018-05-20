@@ -271,6 +271,21 @@ private:
 
 
 
+class BashCompletionHelpPrinter : public HelpPrinter
+{
+public:
+	BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name);
+	virtual ~BashCompletionHelpPrinter() = default;
+
+	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
+
+private:
+	std::string program_name_;
+};
+
+
+
+
 /// Option implementation /////////////////////////////////
 
 inline Option::Option(const std::string& short_option, const std::string& long_option, std::string description) :
@@ -778,7 +793,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 
 inline std::string OptionParser::help(const Attribute& max_attribute) const
 {
-	GroffHelpPrinter help_printer(this);
+	ConsoleHelpPrinter help_printer(this);
 	return help_printer.help(max_attribute);
 }
 
@@ -938,6 +953,51 @@ std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
 		if (!option->description().empty())
 			s << option->description() << "\n";
 	}
+
+	return s.str();
+}
+
+
+
+
+BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name) : HelpPrinter(option_parser), program_name_(program_name)
+{
+}
+
+
+std::string BashCompletionHelpPrinter::help(const Attribute& max_attribute) const
+{
+	if (!option_parser_)
+		return "";
+
+	std::stringstream s;
+	s << "_" << program_name_ << "()\n";
+	s << R"({
+	local cur prev opts
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	opts=")";//;--help --verbose --version"
+
+	for (const auto& option: option_parser_->options())
+	{
+		if (option->attribute() > Attribute::hidden)
+		{
+			if (option->short_option() != 0)
+				s << "-" << option->short_option() << " ";
+			if (!option->long_option().empty())
+				s << "--" << option->long_option() << " ";
+		}
+	}
+
+	s << R"("
+	if [[ ${cur} == -* ]] ; then
+		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+		return 0
+	fi
+}
+complete -F )";
+	s << "_" << program_name_ << " " << program_name_ << "\n";
 
 	return s.str();
 }
