@@ -226,13 +226,16 @@ protected:
 class HelpPrinter
 {
 public:
-	HelpPrinter()
+	HelpPrinter(const OptionParser* option_parser) : option_parser_(option_parser)
 	{
 	}
 
 	virtual ~HelpPrinter() = default;
 
-	virtual std::string help(const OptionParser& option_parser, const Attribute& max_attribute = Attribute::optional) const = 0;
+	virtual std::string help(const Attribute& max_attribute = Attribute::optional) const = 0;
+
+protected:
+	const OptionParser* option_parser_;
 };
 
 
@@ -241,10 +244,25 @@ public:
 class ConsoleHelpPrinter : public HelpPrinter
 {
 public:
-	ConsoleHelpPrinter();
+	ConsoleHelpPrinter(const OptionParser* option_parser);
 	virtual ~ConsoleHelpPrinter() = default;
 
-	std::string help(const OptionParser& option_parser, const Attribute& max_attribute = Attribute::optional) const override;
+	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
+
+private:
+	std::string to_string(Option_ptr option) const;
+};
+
+
+
+
+class GroffHelpPrinter : public HelpPrinter
+{
+public:
+	GroffHelpPrinter(const OptionParser* option_parser);
+	virtual ~GroffHelpPrinter() = default;
+
+	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
 
 private:
 	std::string to_string(Option_ptr option) const;
@@ -760,14 +778,14 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 
 inline std::string OptionParser::help(const Attribute& max_attribute) const
 {
-	ConsoleHelpPrinter help_printer;
-	return help_printer.help(*this, max_attribute);
+	GroffHelpPrinter help_printer(this);
+	return help_printer.help(max_attribute);
 }
 
 
 
 
-ConsoleHelpPrinter::ConsoleHelpPrinter()
+ConsoleHelpPrinter::ConsoleHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
 {
 }
 
@@ -807,24 +825,27 @@ std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
 }
 
 
-std::string ConsoleHelpPrinter::help(const OptionParser& option_parser, const Attribute& max_attribute) const
+std::string ConsoleHelpPrinter::help(const Attribute& max_attribute) const
 {
+	if (!option_parser_)
+		return "";
+
 	if (max_attribute < Attribute::optional)
 		throw std::invalid_argument("attribute must be 'optional', 'advanced', or 'default'");
 
 	std::stringstream s;
-	if (!option_parser.description().empty())
-		s << option_parser.description() << ":\n";
+	if (!option_parser_->description().empty())
+		s << option_parser_->description() << ":\n";
 
 	size_t optionRightMargin(20);
 	const size_t maxDescriptionLeftMargin(40);
 //	const size_t descriptionRightMargin(80);
 
-	for (const auto& option: option_parser.options())
+	for (const auto& option: option_parser_->options())
 		optionRightMargin = std::max(optionRightMargin, to_string(option).size() + 2);
 	optionRightMargin = std::min(maxDescriptionLeftMargin - 2, optionRightMargin);
 
-	for (const auto& option: option_parser.options())
+	for (const auto& option: option_parser_->options())
 	{
 		if ((option->attribute() <= Attribute::hidden) || 
 			(option->attribute() > max_attribute))
@@ -850,6 +871,72 @@ std::string ConsoleHelpPrinter::help(const OptionParser& option_parser, const At
 			s << lines[n];
 		}
 		s << "\n";
+	}
+
+	return s.str();
+}
+
+
+
+
+GroffHelpPrinter::GroffHelpPrinter(const OptionParser* option_parser) : HelpPrinter(option_parser)
+{
+}
+
+
+std::string GroffHelpPrinter::to_string(Option_ptr option) const
+{
+	std::stringstream line;
+	if (option->short_option() != 0)
+	{
+		line << "-" << option->short_option();
+		if (!option->long_option().empty())
+			line << ", ";
+	}
+	if (!option->long_option().empty())
+		line << "--" << option->long_option();
+
+	if (option->argument_type() == Argument::required)
+	{
+		line << " arg";
+		std::stringstream defaultStr;
+		if (option->get_default(defaultStr))
+		{
+			if (!defaultStr.str().empty())
+				line << " (=" << defaultStr.str() << ")";
+		}
+	}
+	else if (option->argument_type() == Argument::optional)
+	{
+		std::stringstream defaultStr;
+		if (option->get_default(defaultStr))
+			line << " [=arg(=" << defaultStr.str() << ")]";
+	}
+
+	return line.str();
+}
+
+
+std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
+{
+	if (!option_parser_)
+		return "";
+
+	if (max_attribute < Attribute::optional)
+		throw std::invalid_argument("attribute must be 'optional', 'advanced', or 'default'");
+
+	std::stringstream s;
+	if (!option_parser_->description().empty())
+		s << ".SS " << option_parser_->description() << ":\n";
+
+	for (const auto& option: option_parser_->options())
+	{
+		if ((option->attribute() <= Attribute::hidden) || 
+			(option->attribute() > max_attribute))
+			continue;
+		s << ".TP\n\\fB" << to_string(option) << "\\fR\n";
+		if (!option->description().empty())
+			s << option->description() << "\n";
 	}
 
 	return s.str();
