@@ -67,6 +67,10 @@ friend class OptionParser;
 public:
 	Option(const std::string& short_option, const std::string& long_option, std::string description);
 	virtual ~Option() = default;
+	Option(const Option&) = default;
+	Option(Option&&) = default;
+	Option& operator=(const Option&) = default;
+	Option& operator=(Option&&) = default;
 
 	char short_option() const;
 	std::string long_option() const;
@@ -126,7 +130,7 @@ protected:
 
 	virtual void update_reference();
 	virtual void add_value(const T& value);
-	virtual void clear() override;
+	void clear() override;
 
 	T* assign_to_;
 	std::vector<T> values_;
@@ -679,9 +683,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 		{
 			///from here on only non opt args
 			for (int m=n+1; m<argc; ++m)
-				non_option_args_.push_back(argv[m]);
-
-			break;
+				non_option_args_.emplace_back(argv[m]);
 		}
 		else if (arg.find("--") == 0)
 		{
@@ -717,7 +719,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 			else
 				unknown_options_.push_back(arg);
 		}
-		else if (arg.find("-") == 0)
+		else if (arg.find('-') == 0)
 		{
 			/// short option arg
 			std::string opt = arg.substr(1);
