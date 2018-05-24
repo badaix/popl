@@ -115,7 +115,7 @@ public:
 	void assign_to(T* var);
 
 	void set_value(const T& value);
-	virtual T value(size_t idx = 0) const;
+	T value(size_t idx = 0) const;
 
 	void set_default(const T& value);
 	bool has_default() const;
