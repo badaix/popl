@@ -81,7 +81,7 @@ public:
 	Attribute attribute() const;
 
 	virtual Argument argument_type() const = 0;
-	virtual unsigned int count() const = 0;
+	virtual size_t count() const = 0;
 	virtual bool is_set() const = 0;
 
 protected:
@@ -109,7 +109,7 @@ public:
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
-	unsigned int count() const override;
+	size_t count() const override;
 	bool is_set() const override;
 
 	void assign_to(T* var);
@@ -360,7 +360,7 @@ inline Value<T>::Value(const std::string& short_option, const std::string& long_
 
 
 template<class T>
-inline unsigned int Value<T>::count() const
+inline size_t Value<T>::count() const
 {
 	return values_.size();
 }
@@ -967,7 +967,7 @@ inline BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* 
 }
 
 
-inline std::string BashCompletionHelpPrinter::help(const Attribute& max_attribute) const
+inline std::string BashCompletionHelpPrinter::help(const Attribute& /*max_attribute*/) const
 {
 	if (!option_parser_)
 		return "";
