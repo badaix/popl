@@ -6,7 +6,7 @@
     version 1.1.0
     https://github.com/badaix/popl
 
-	This file is part of popl (program options parser lib)
+    This file is part of popl (program options parser lib)
     Copyright (C) 2015-2018 Johannes Pohl
     
     This software may be modified and distributed under the terms
@@ -37,7 +37,13 @@ namespace popl
 #define POPL_VERSION "1.1.0"
 
 
-enum class Argument // permitted values for its `argument_type' field...
+/// Option's argument type
+/**
+ * Switch has "no" argument
+ * Value has "required" argument
+ * Implicit has "optional" argument
+ */
+enum class Argument
 {
 	no = 0,    // option never takes an argument
 	required,  // option always requires an argument
@@ -45,6 +51,15 @@ enum class Argument // permitted values for its `argument_type' field...
 };
 
 
+/// Option's attribute
+/**
+ * inactive: Option is not set and will not be parsed
+ * hidden:   Option is active, but will not show up in the help message
+ * required: Option must be set on the command line. Otherwise an exception will be thrown
+ * optional: Option must not be set. Default attribute.
+ * advanced: Option is advanced and will only show up in the advanced help message
+ * expoert:  Option is expert and will only show up in the expert help message
+ */
 enum class Attribute
 {
 	inactive = 0,
@@ -59,33 +74,79 @@ enum class Attribute
 /// Abstract Base class for Options
 /**
  * Base class for Options
- * holds just configuration data, no runtime data
+ * holds just configuration data, no runtime data.
+ * Option is not bound to a special type "T"
  */
 class Option
 {
 friend class OptionParser;
 public:
+	/// Construct an Option
+	/// @param short_option the short option. Must be empty or one character.
+	/// @param long_option the long option. Can be empty.
+	/// @param description the Option's description that will be shown in the help message
 	Option(const std::string& short_option, const std::string& long_option, std::string description);
+
+	/// Destructor
 	virtual ~Option() = default;
+
+	/// default copy constructor
 	Option(const Option&) = default;
+
+	/// default move constructor
 	Option(Option&&) = default;
+
+	/// default assignement operator
 	Option& operator=(const Option&) = default;
+
+	/// default move assignement operator
 	Option& operator=(Option&&) = default;
 
+	/// Get the Option's short option
+	/// @return character of the short option or 0 if no short is defined
 	char short_option() const;
+
+	/// Get the Option's long option
+	/// @return the long option. Empty string if no long option is defined
 	std::string long_option() const;
+
+	/// Get the Option's description
+	/// @return the description
 	std::string description() const;
+
+	/// Get the Option's default value
+	/// @param out stream to write the default value to
+	/// @return true if a default value is available, false if not
 	virtual bool get_default(std::ostream& out) const = 0;
 
+	/// Set the Option's attribute
+	/// @param attribute
 	void set_attribute(const Attribute& attribute);
+
+	/// Get the Option's attribute
+	/// @return the Options's attribute
 	Attribute attribute() const;
 
+	/// Get the Option's argument type
+	/// @return argument type (no, required, optional)
 	virtual Argument argument_type() const = 0;
+
+	/// Check how often the Option is set on command line
+	/// @return the Option's count on command line
 	virtual size_t count() const = 0;
+
+	/// Check if the Option is set
+	/// @return true if set at least once
 	virtual bool is_set() const = 0;
 
 protected:
+
+	/// Parse the command line option and fill the internal data structure
+	/// @param what_option short or long option
+	/// @param value the value as given on command line
 	virtual void parse(const std::string& what_option, const char* value) = 0;
+
+	/// Clear the internal data structure
 	virtual void clear() = 0;
 
 	std::string short_option_;
@@ -106,19 +167,46 @@ template<class T>
 class Value : public Option
 {
 public:
+	/// Construct an Value Option
+	/// @param short_option the short option. Must be empty or one character.
+	/// @param long_option the long option. Can be empty.
+	/// @param description the Option's description that will be shown in the help message
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
+
+	/// Construct an Value Option
+	/// @param short_option the short option. Must be empty or one character.
+	/// @param long_option the long option. Can be empty.
+	/// @param description the Option's description that will be shown in the help message
+	/// @param default_val the Option's default value
+	/// @param assign_to pointer to a variable to assign the parsed command line value to
 	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
 	size_t count() const override;
 	bool is_set() const override;
 
+	/// Assign the last parsed command line value to "var"
+	/// @param var pointer to the variable where is value is written to
 	void assign_to(T* var);
 
+	/// Manually set the Option's value. Deletes current value(s)
+	/// @param value the new value of the option
 	void set_value(const T& value);
+
+	/// Get the Option's value. Will throw if option at index idx is not available
+	/// @param idx the zero based index of the value (if set multiple times)
+	/// @return the Option's value at index "idx"
 	T value(size_t idx = 0) const;
 
+	/// Set the Option's default value
+	/// @param value the default value if not specified on command line
 	void set_default(const T& value);
+
+	/// Check if the Option has a default value
+	/// @return true if the Option has a default value
 	bool has_default() const;
+
+	/// Get the Option's default value. Will throw if no default is set.
+	/// @return the Option's default value
 	T get_default() const;
 	bool get_default(std::ostream& out) const override;
 
@@ -143,8 +231,8 @@ protected:
 /**
  * Value option with implicit default value
  * If set, an argument is optional
- * without argument it carries the implicit default value
- * with argument it carries the explicit value
+ * -without argument it carries the implicit default value
+ * -with argument it carries the explicit value
  */
 template<class T>
 class Implicit : public Value<T>
@@ -187,30 +275,71 @@ using Option_ptr = std::shared_ptr<Option>;
 /// OptionParser manages all Options
 /**
  * OptionParser manages all Options
- * Add Options (Option_Type = Value<T>, Implicit<T> or Switch) with "add<Option_Type>(option params)""
+ * Add Options (Option_Type = Value<T>, Implicit<T> or Switch) with "add<Option_Type>(option params)"
  * Call "parse(argc, argv)" to trigger parsing of the options and to 
  * fill "non_option_args" and "unknown_options"
  */
 class OptionParser
 {
 public:
+	/// Construct the OptionParser
+	/// @param description used for the help message
 	explicit OptionParser(std::string description = "");
+
+	/// Destructor
 	virtual ~OptionParser() = default;
 
+	/// Add an Option e.g. 'add<Value<int>>("i", "int", "description for the -i option")'
+	/// @param T the option type (Value, Switch, Implicit)
+	/// @param attribute the Option's attribute (inactive, hidden, required, optional, ...)
+	/// @param Ts the Option's parameter
 	template<typename T, Attribute attribute, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
+
+	/// Add an Option e.g. 'add<Value<int>>("i", "int", "description for the -i option")'
+	/// @param T the option type (Value, Switch, Implicit)
+	/// @param Ts the Option's parameter
 	template<typename T, typename... Ts>
 	std::shared_ptr<T> add(Ts&&... params);
 
+	/// Parse the command line into the added Options
+	/// @param argc command line argument count
+	/// @param argv command line arguments
 	void parse(int argc, const char * const argv[]);
+
+	/// Produce a help message
+	/// @param max_attribute show options up to this level (optional, advanced, expert)
+	/// @return the help message
 	std::string help(const Attribute& max_attribute = Attribute::optional) const;
+
+	/// Get the OptionParser's description
+	/// @return the description as given during construction
 	std::string description() const;
+
+	/// Get all options that where added with "add"
+	/// @return a vector of the contained Options
 	const std::vector<Option_ptr>& options() const;
+
+	/// Get command line arguments without option
+	/// e.g. "-i 5 hello" => hello
+	/// e.g. "-i 5 -- from here non option args" => "from", "here", "non", "option", "args"
+	/// @return vector to "stand-alone" command line arguments
 	const std::vector<std::string>& non_option_args() const;
+
+	/// Get unknown command options
+	/// e.g. '--some_unknown_option="hello"'
+	/// @return vector to "stand-alone" command line arguments
 	const std::vector<std::string>& unknown_options() const;
 
+	/// Get an Option by it's long option
+	/// @param the Option's long option
+	/// @return a pointer of type "Value, Switch, Implicit" to the Option or nullptr
 	template<typename T>
 	std::shared_ptr<T> get_option(const std::string& long_opt) const;
+
+	/// Get an Option by it's short option
+	/// @param the Option's short option
+	/// @return a pointer of type "Value, Switch, Implicit" to the Option or nullptr
 	template<typename T>
 	std::shared_ptr<T> get_option(char short_opt) const;
 
@@ -226,16 +355,52 @@ protected:
 
 
 
+class invalid_option : public std::invalid_argument
+{
+public:
+	enum class Error
+	{
+		missing_argument,
+		invalid_argument,
+		too_many_arguments,
+		missing_option
+	};
 
+	invalid_option(const Option* option, invalid_option::Error error, const std::string& text) : std::invalid_argument(text.c_str()), option_(option), error_(error)
+	{
+	}
+
+	Error error() const
+	{
+		return error_;
+	}
+
+private:
+	const Option* option_;
+	Error error_;
+};
+
+
+
+/// Base class for a HelpPrinter
+/**
+ * HelpPrinter creates a help message for a given OptionParser
+ */
 class HelpPrinter
 {
 public:
+	/// Constructor
+	/// @param option_parser the OptionParser to create the help message from
 	HelpPrinter(const OptionParser* option_parser) : option_parser_(option_parser)
 	{
 	}
 
+	/// Destructor
 	virtual ~HelpPrinter() = default;
 
+	/// Create a help message
+	/// @param max_attribute show options up to this level (optional, advanced, expert)
+	/// @return the help message
 	virtual std::string help(const Attribute& max_attribute = Attribute::optional) const = 0;
 
 protected:
@@ -245,6 +410,11 @@ protected:
 
 
 
+/// Help printer for the console
+/**
+ * Standard console help printer
+ * Creates a human readable help message
+ */
 class ConsoleHelpPrinter : public HelpPrinter
 {
 public:
@@ -260,6 +430,10 @@ private:
 
 
 
+/// Help printer for man pages
+/**
+ * Creates help messages in groff format that can be used in man pages
+ */
 class GroffHelpPrinter : public HelpPrinter
 {
 public:
@@ -275,6 +449,10 @@ private:
 
 
 
+/// Help printer for bash completion
+/**
+ * Creates a script with all options (short and long) that can be used for bash completion
+ */
 class BashCompletionHelpPrinter : public HelpPrinter
 {
 public:
@@ -463,7 +641,7 @@ template<>
 inline void Value<std::string>::parse(const std::string& what_option, const char* value)
 {
 	if (strlen(value) == 0)
-		throw std::invalid_argument("missing argument for " + what_option);
+		throw invalid_option(this, invalid_option::Error::missing_argument, "missing argument for " + what_option);
 
 	add_value(value);
 }
@@ -490,13 +668,13 @@ inline void Value<T>::parse(const std::string& what_option, const char* value)
 	}
 
 	if (is.fail())
-		throw std::invalid_argument("invalid argument for " + what_option + ": '" + strValue + "'");
+		throw invalid_option(this, invalid_option::Error::invalid_argument, "invalid argument for " + what_option + ": '" + strValue + "'");
 
 	if (valuesRead > 1)
-		throw std::invalid_argument("too many arguments for " + what_option + ": '" + strValue + "'");
+		throw invalid_option(this, invalid_option::Error::too_many_arguments, "too many arguments for " + what_option + ": '" + strValue + "'");
 
 	if (strValue.empty())
-		throw std::invalid_argument("missing argument for " + what_option);
+		throw invalid_option(this, invalid_option::Error::missing_argument, "missing argument for " + what_option);
 
 	this->add_value(parsed_value);
 }
@@ -785,7 +963,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 		if ((opt->attribute() == Attribute::required) && !opt->is_set())
 		{
 			std::string option = opt->long_option().empty()?std::string(1, opt->short_option()):opt->long_option();
-			throw std::invalid_argument("option \"" + option + "\" is required");
+			throw invalid_option(opt.get(), invalid_option::Error::missing_option, "option \"" + option + "\" is required");
 		}
 	}
 }
@@ -979,7 +1157,7 @@ inline std::string BashCompletionHelpPrinter::help(const Attribute& /*max_attrib
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
-	opts=")";//;--help --verbose --version"
+	opts=")";
 
 	for (const auto& option: option_parser_->options())
 	{
