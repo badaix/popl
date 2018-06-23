@@ -397,6 +397,11 @@ public:
 	{
 	}
 
+	const Option* option() const
+	{
+		return option_;
+	}
+
 	Error error() const
 	{
 		return error_;
