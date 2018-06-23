@@ -71,6 +71,20 @@ enum class Attribute
 };
 
 
+/// Option name type. Used in invalid_option exception.
+/**
+ * unspecified: not specified
+ * short_name:  The option's short name
+ * long_name:   The option's long name
+ */
+enum class OptionName
+{
+	unspecified,
+	short_name,
+	long_name
+};
+
+
 /// Abstract Base class for Options
 /**
  * Base class for Options
@@ -110,6 +124,12 @@ public:
 	/// @return the long name of the Option. Empty string if no long name is defined
 	std::string long_name() const;
 
+	/// Get the Option's long or short name
+	/// @param what_name the option's name to return
+	/// @param what_hyphen preced the returned name with (double-)hypen
+	/// @return the requested name of the Option. Empty string if not defined.
+	std::string name(OptionName what_name, bool with_hypen = false) const;
+
 	/// Get the Option's description
 	/// @return the description
 	std::string description() const;
@@ -141,9 +161,9 @@ public:
 
 protected:
 	/// Parse the command line option and fill the internal data structure
-	/// @param what_option short or long option name
+	/// @param what_name short or long option name
 	/// @param value the value as given on command line
-	virtual void parse(const std::string& what_option, const char* value) = 0;
+	virtual void parse(OptionName what_name, const char* value) = 0;
 
 	/// Clear the internal data structure
 	virtual void clear() = 0;
@@ -212,7 +232,7 @@ public:
 	Argument argument_type() const override;
 
 protected:
-	void parse(const std::string& what_option, const char* value) override;
+	void parse(OptionName what_name, const char* value) override;
 	std::unique_ptr<T> default_;
 
 	virtual void update_reference();
@@ -242,7 +262,7 @@ public:
 	Argument argument_type() const override;
 
 protected:
-	void parse(const std::string& what_option, const char* value) override;
+	void parse(OptionName what_name, const char* value) override;
 };
 
 
@@ -263,7 +283,7 @@ public:
 	Argument argument_type() const override;
 
 protected:
-	void parse(const std::string& what_option, const char* value) override;
+	void parse(OptionName what_name, const char* value) override;
 };
 
 
@@ -365,7 +385,13 @@ public:
 		missing_option
 	};
 
-	invalid_option(const Option* option, invalid_option::Error error, const std::string& text) : std::invalid_argument(text.c_str()), option_(option), error_(error)
+	invalid_option(const Option* option, invalid_option::Error error, OptionName what_name, const std::string& value, const std::string& text) :
+		std::invalid_argument(text.c_str()), option_(option), error_(error), what_name_(what_name), value_(value)
+	{
+	}
+
+	invalid_option(const Option* option, invalid_option::Error error, const std::string& text) :
+		invalid_option(option, error, OptionName::unspecified, "", text)
 	{
 	}
 
@@ -374,9 +400,21 @@ public:
 		return error_;
 	}
 
+	OptionName what_name() const
+	{
+		return what_name_;
+	}
+
+	std::string value() const
+	{
+		return value_;
+	}
+
 private:
 	const Option* option_;
 	Error error_;
+	OptionName what_name_;
+	std::string value_;
 };
 
 
@@ -494,6 +532,17 @@ inline char Option::short_name() const
 inline std::string Option::long_name() const
 {
 	return long_name_;
+}
+
+
+inline std::string Option::name(OptionName what_name, bool with_hypen) const
+{
+	if (what_name == OptionName::short_name)
+		return short_name_.empty()?"":((with_hypen?"-":"") + short_name_);
+	else if (what_name == OptionName::long_name)
+		return long_name_.empty()?"":((with_hypen?"--":"") + long_name_);
+	else
+		return "";
 }
 
 
@@ -637,17 +686,17 @@ inline Argument Value<T>::argument_type() const
 
 
 template<>
-inline void Value<std::string>::parse(const std::string& what_option, const char* value)
+inline void Value<std::string>::parse(OptionName what_name, const char* value)
 {
 	if (strlen(value) == 0)
-		throw invalid_option(this, invalid_option::Error::missing_argument, "missing argument for " + what_option);
+		throw invalid_option(this, invalid_option::Error::missing_argument, what_name, value, "missing argument for " + name(what_name, true));
 
 	add_value(value);
 }
 
 
 template<class T>
-inline void Value<T>::parse(const std::string& what_option, const char* value)
+inline void Value<T>::parse(OptionName what_name, const char* value)
 {
 	T parsed_value;
 	std::string strValue;
@@ -667,13 +716,13 @@ inline void Value<T>::parse(const std::string& what_option, const char* value)
 	}
 
 	if (is.fail())
-		throw invalid_option(this, invalid_option::Error::invalid_argument, "invalid argument for " + what_option + ": '" + strValue + "'");
+		throw invalid_option(this, invalid_option::Error::invalid_argument, what_name, value, "invalid argument for " + name(what_name, true) + ": '" + strValue + "'");
 
 	if (valuesRead > 1)
-		throw invalid_option(this, invalid_option::Error::too_many_arguments, "too many arguments for " + what_option + ": '" + strValue + "'");
+		throw invalid_option(this, invalid_option::Error::too_many_arguments, what_name, value, "too many arguments for " + name(what_name, true) + ": '" + strValue + "'");
 
 	if (strValue.empty())
-		throw invalid_option(this, invalid_option::Error::missing_argument, "missing argument for " + what_option);
+		throw invalid_option(this, invalid_option::Error::missing_argument, what_name, "", "missing argument for " + name(what_name, true));
 
 	this->add_value(parsed_value);
 }
@@ -724,10 +773,10 @@ inline Argument Implicit<T>::argument_type() const
 
 
 template<class T>
-inline void Implicit<T>::parse(const std::string& what_option, const char* value)
+inline void Implicit<T>::parse(OptionName what_name, const char* value)
 {
 	if ((value != nullptr) && (strlen(value) > 0))
-		Value<T>::parse(what_option, value);
+		Value<T>::parse(what_name, value);
 	else
 		this->add_value(*this->default_);
 }
@@ -743,7 +792,7 @@ inline Switch::Switch(const std::string& short_name, const std::string& long_nam
 }
 
 
-inline void Switch::parse(const std::string& /*what_option*/, const char* /*value*/)
+inline void Switch::parse(OptionName /*what_name*/, const char* /*value*/)
 {
 	add_value(true);
 }
@@ -907,7 +956,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 			}
 
 			if (option)
-				option->parse(opt, optarg.c_str());
+				option->parse(OptionName::long_name, optarg.c_str());
 			else
 				unknown_options_.push_back(arg);
 		}
@@ -944,7 +993,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 				}
 
 				if (option)
-					option->parse(std::string(1, c), optarg.c_str());
+					option->parse(OptionName::short_name, optarg.c_str());
 				else
 					unknown = true;
 			}
