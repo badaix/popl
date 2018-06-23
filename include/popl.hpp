@@ -82,10 +82,10 @@ class Option
 friend class OptionParser;
 public:
 	/// Construct an Option
-	/// @param short_option the short option. Must be empty or one character.
-	/// @param long_option the long option. Can be empty.
+	/// @param short_name the options's short name. Must be empty or one character.
+	/// @param long_name the option's long name. Can be empty.
 	/// @param description the Option's description that will be shown in the help message
-	Option(const std::string& short_option, const std::string& long_option, std::string description);
+	Option(const std::string& short_name, const std::string& long_name, std::string description);
 
 	/// Destructor
 	virtual ~Option() = default;
@@ -102,13 +102,13 @@ public:
 	/// default move assignement operator
 	Option& operator=(Option&&) = default;
 
-	/// Get the Option's short option
-	/// @return character of the short option or 0 if no short is defined
-	char short_option() const;
+	/// Get the Option's short name
+	/// @return character of the options's short name or 0 if no short name is defined
+	char short_name() const;
 
-	/// Get the Option's long option
-	/// @return the long option. Empty string if no long option is defined
-	std::string long_option() const;
+	/// Get the Option's long name
+	/// @return the long name of the Option. Empty string if no long name is defined
+	std::string long_name() const;
 
 	/// Get the Option's description
 	/// @return the description
@@ -140,17 +140,16 @@ public:
 	virtual bool is_set() const = 0;
 
 protected:
-
 	/// Parse the command line option and fill the internal data structure
-	/// @param what_option short or long option
+	/// @param what_option short or long option name
 	/// @param value the value as given on command line
 	virtual void parse(const std::string& what_option, const char* value) = 0;
 
 	/// Clear the internal data structure
 	virtual void clear() = 0;
 
-	std::string short_option_;
-	std::string long_option_;
+	std::string short_name_;
+	std::string long_name_;
 	std::string description_;
 	Attribute attribute_;
 };
@@ -168,18 +167,18 @@ class Value : public Option
 {
 public:
 	/// Construct an Value Option
-	/// @param short_option the short option. Must be empty or one character.
-	/// @param long_option the long option. Can be empty.
+	/// @param short_name the option's short name. Must be empty or one character.
+	/// @param long_name the option's long name. Can be empty.
 	/// @param description the Option's description that will be shown in the help message
-	Value(const std::string& short_option, const std::string& long_option, const std::string& description);
+	Value(const std::string& short_name, const std::string& long_name, const std::string& description);
 
 	/// Construct an Value Option
-	/// @param short_option the short option. Must be empty or one character.
-	/// @param long_option the long option. Can be empty.
+	/// @param short_name the option's short name. Must be empty or one character.
+	/// @param long_name the option's long name. Can be empty.
 	/// @param description the Option's description that will be shown in the help message
 	/// @param default_val the Option's default value
 	/// @param assign_to pointer to a variable to assign the parsed command line value to
-	Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to = nullptr);
+	Value(const std::string& short_name, const std::string& long_name, const std::string& description, const T& default_val, T* assign_to = nullptr);
 
 	size_t count() const override;
 	bool is_set() const override;
@@ -238,7 +237,7 @@ template<class T>
 class Implicit : public Value<T>
 {
 public:
-	Implicit(const std::string& short_option, const std::string& long_option, const std::string& description, const T& implicit_val, T* assign_to = nullptr);
+	Implicit(const std::string& short_name, const std::string& long_name, const std::string& description, const T& implicit_val, T* assign_to = nullptr);
 
 	Argument argument_type() const override;
 
@@ -258,7 +257,7 @@ protected:
 class Switch : public Value<bool>
 {
 public:
-	Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to = nullptr);
+	Switch(const std::string& short_name, const std::string& long_name, const std::string& description, bool* assign_to = nullptr);
 
 	void set_default(const bool& value) = delete;
 	Argument argument_type() const override;
@@ -331,17 +330,17 @@ public:
 	/// @return vector to "stand-alone" command line arguments
 	const std::vector<std::string>& unknown_options() const;
 
-	/// Get an Option by it's long option
-	/// @param the Option's long option
+	/// Get an Option by it's long name
+	/// @param the Option's long name
 	/// @return a pointer of type "Value, Switch, Implicit" to the Option or nullptr
 	template<typename T>
-	std::shared_ptr<T> get_option(const std::string& long_opt) const;
+	std::shared_ptr<T> get_option(const std::string& long_name) const;
 
-	/// Get an Option by it's short option
-	/// @param the Option's short option
+	/// Get an Option by it's short name
+	/// @param the Option's short name
 	/// @return a pointer of type "Value, Switch, Implicit" to the Option or nullptr
 	template<typename T>
-	std::shared_ptr<T> get_option(char short_opt) const;
+	std::shared_ptr<T> get_option(char short_name) const;
 
 protected:
 	std::vector<Option_ptr> options_;
@@ -349,8 +348,8 @@ protected:
 	std::vector<std::string> non_option_args_;
 	std::vector<std::string> unknown_options_;
 
-	Option_ptr find_option(const std::string& long_opt) const;
-	Option_ptr find_option(char short_opt) const;
+	Option_ptr find_option(const std::string& long_name) const;
+	Option_ptr find_option(char short_name) const;
 };
 
 
@@ -470,31 +469,31 @@ private:
 
 /// Option implementation /////////////////////////////////
 
-inline Option::Option(const std::string& short_option, const std::string& long_option, std::string description) :
-	short_option_(short_option),
-	long_option_(long_option),
+inline Option::Option(const std::string& short_name, const std::string& long_name, std::string description) :
+	short_name_(short_name),
+	long_name_(long_name),
 	description_(std::move(description)),
 	attribute_(Attribute::optional)
 {
-	if (short_option.size() > 1)
-		throw std::invalid_argument("length of short option must be <= 1: '" + short_option + "'");
+	if (short_name.size() > 1)
+		throw std::invalid_argument("length of short name must be <= 1: '" + short_name + "'");
 
-	if (short_option.empty() && long_option.empty())
-		throw std::invalid_argument("short and long option are empty");
+	if (short_name.empty() && long_name.empty())
+		throw std::invalid_argument("short and long name are empty");
 }
 
 
-inline char Option::short_option() const
+inline char Option::short_name() const
 {
-	if (!short_option_.empty())
-		return short_option_[0];
+	if (!short_name_.empty())
+		return short_name_[0];
 	return 0;
 }
 
 
-inline std::string Option::long_option() const
+inline std::string Option::long_name() const
 {
-	return long_option_;
+	return long_name_;
 }
 
 
@@ -521,16 +520,16 @@ inline Attribute Option::attribute() const
 /// Value implementation /////////////////////////////////
 
 template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description) :
-	Option(short_option, long_option, description),
+inline Value<T>::Value(const std::string& short_name, const std::string& long_name, const std::string& description) :
+	Option(short_name, long_name, description),
 	assign_to_(nullptr)
 {
 }
 
 
 template<class T>
-inline Value<T>::Value(const std::string& short_option, const std::string& long_option, const std::string& description, const T& default_val, T* assign_to) :
-	Value<T>(short_option, long_option, description)
+inline Value<T>::Value(const std::string& short_name, const std::string& long_name, const std::string& description, const T& default_val, T* assign_to) :
+	Value<T>(short_name, long_name, description)
 {
 	assign_to_ = assign_to;
 	set_default(default_val);
@@ -581,10 +580,10 @@ inline T Value<T>::value(size_t idx) const
 		else
 			optionStr << "index out of range (" << idx << ") for \"";
 
-		if (short_option() != 0)
-			optionStr << "-" << short_option();
+		if (short_name() != 0)
+			optionStr << "-" << short_name();
 		else
-			optionStr << "--" << long_option();
+			optionStr << "--" << long_name();
 
 		optionStr << "\"";
 		throw std::out_of_range(optionStr.str());
@@ -711,8 +710,8 @@ inline void Value<T>::clear()
 /// Implicit implementation /////////////////////////////////
 
 template<class T>
-inline Implicit<T>::Implicit(const std::string& short_option, const std::string& long_option, const std::string& description, const T& implicit_val, T* assign_to) :
-	Value<T>(short_option, long_option, description, implicit_val, assign_to)
+inline Implicit<T>::Implicit(const std::string& short_name, const std::string& long_name, const std::string& description, const T& implicit_val, T* assign_to) :
+	Value<T>(short_name, long_name, description, implicit_val, assign_to)
 {
 }
 
@@ -738,8 +737,8 @@ inline void Implicit<T>::parse(const std::string& what_option, const char* value
 
 /// Switch implementation /////////////////////////////////
 
-inline Switch::Switch(const std::string& short_option, const std::string& long_option, const std::string& description, bool* assign_to) :
-	Value<bool>(short_option, long_option, description, false, assign_to)
+inline Switch::Switch(const std::string& short_name, const std::string& long_name, const std::string& description, bool* assign_to) :
+	Value<bool>(short_name, long_name, description, false, assign_to)
 {
 }
 
@@ -783,10 +782,10 @@ inline std::shared_ptr<T> OptionParser::add(Ts&&... params)
 
 	for (const auto& o: options_)
 	{
-		if ((option->short_option() != 0) && (option->short_option() == o->short_option()))
-			throw std::invalid_argument("duplicate short option '-" + std::string(1, option->short_option()) + "'");
-		if (!option->long_option().empty() && (option->long_option() == (o->long_option())))
-			throw std::invalid_argument("duplicate long option '--" + option->long_option() + "'");
+		if ((option->short_name() != 0) && (option->short_name() == o->short_name()))
+			throw std::invalid_argument("duplicate short option name '-" + std::string(1, option->short_name()) + "'");
+		if (!option->long_name().empty() && (option->long_name() == (o->long_name())))
+			throw std::invalid_argument("duplicate long option name '--" + option->long_name() + "'");
 	}
 	option->set_attribute(attribute);
 	options_.push_back(option);
@@ -818,46 +817,46 @@ inline const std::vector<std::string>& OptionParser::unknown_options() const
 }
 
 
-inline Option_ptr OptionParser::find_option(const std::string& long_opt) const
+inline Option_ptr OptionParser::find_option(const std::string& long_name) const
 {
 	for (const auto& option: options_)
-		if (option->long_option() == long_opt)
+		if (option->long_name() == long_name)
 			return option;
 	return nullptr;
 }
 
 
-inline Option_ptr OptionParser::find_option(char short_opt) const
+inline Option_ptr OptionParser::find_option(char short_name) const
 {
 	for (const auto& option: options_)
-		if (option->short_option() == short_opt)
+		if (option->short_name() == short_name)
 			return option;
 	return nullptr;
 }
 
 
 template<typename T>
-inline std::shared_ptr<T> OptionParser::get_option(const std::string& long_opt) const
+inline std::shared_ptr<T> OptionParser::get_option(const std::string& long_name) const
 {
-	Option_ptr option = find_option(long_opt);
+	Option_ptr option = find_option(long_name);
 	if (!option)
-		throw std::invalid_argument("option not found: " + long_opt);
+		throw std::invalid_argument("option not found: " + long_name);
 	auto result = std::dynamic_pointer_cast<T>(option);
 	if (!result)
-		throw std::invalid_argument("cannot cast option to T: " + long_opt);
+		throw std::invalid_argument("cannot cast option to T: " + long_name);
 	return result;
 }
 
 
 template<typename T>
-inline std::shared_ptr<T> OptionParser::get_option(char short_opt) const
+inline std::shared_ptr<T> OptionParser::get_option(char short_name) const
 {
-	Option_ptr option = find_option(short_opt);
+	Option_ptr option = find_option(short_name);
 	if (!option)
-		throw std::invalid_argument("option not found: " + std::string(1, short_opt));
+		throw std::invalid_argument("option not found: " + std::string(1, short_name));
 	auto result = std::dynamic_pointer_cast<T>(option);
 	if (!result)
-		throw std::invalid_argument("cannot cast option to T: " + std::string(1, short_opt));
+		throw std::invalid_argument("cannot cast option to T: " + std::string(1, short_name));
 	return result;
 }
 
@@ -962,7 +961,7 @@ inline void OptionParser::parse(int argc, const char * const argv[])
 	{
 		if ((opt->attribute() == Attribute::required) && !opt->is_set())
 		{
-			std::string option = opt->long_option().empty()?std::string(1, opt->short_option()):opt->long_option();
+			std::string option = opt->long_name().empty()?std::string(1, opt->short_name()):opt->long_name();
 			throw invalid_option(opt.get(), invalid_option::Error::missing_option, "option \"" + option + "\" is required");
 		}
 	}
@@ -988,16 +987,16 @@ inline ConsoleHelpPrinter::ConsoleHelpPrinter(const OptionParser* option_parser)
 inline std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
 {
 	std::stringstream line;
-	if (option->short_option() != 0)
+	if (option->short_name() != 0)
 	{
-		line << "  -" << option->short_option();
-		if (!option->long_option().empty())
+		line << "  -" << option->short_name();
+		if (!option->long_name().empty())
 			line << ", ";
 	}
 	else
 		line << "  ";
-	if (!option->long_option().empty())
-		line << "--" << option->long_option();
+	if (!option->long_name().empty())
+		line << "--" << option->long_name();
 
 	if (option->argument_type() == Argument::required)
 	{
@@ -1082,14 +1081,14 @@ inline GroffHelpPrinter::GroffHelpPrinter(const OptionParser* option_parser) : H
 inline std::string GroffHelpPrinter::to_string(Option_ptr option) const
 {
 	std::stringstream line;
-	if (option->short_option() != 0)
+	if (option->short_name() != 0)
 	{
-		line << "-" << option->short_option();
-		if (!option->long_option().empty())
+		line << "-" << option->short_name();
+		if (!option->long_name().empty())
 			line << ", ";
 	}
-	if (!option->long_option().empty())
-		line << "--" << option->long_option();
+	if (!option->long_name().empty())
+		line << "--" << option->long_name();
 
 	if (option->argument_type() == Argument::required)
 	{
@@ -1163,10 +1162,10 @@ inline std::string BashCompletionHelpPrinter::help(const Attribute& /*max_attrib
 	{
 		if (option->attribute() > Attribute::hidden)
 		{
-			if (option->short_option() != 0)
-				s << "-" << option->short_option() << " ";
-			if (!option->long_option().empty())
-				s << "--" << option->long_option() << " ";
+			if (option->short_name() != 0)
+				s << "-" << option->short_name() << " ";
+			if (!option->long_name().empty())
+				s << "--" << option->long_name() << " ";
 		}
 	}
 
