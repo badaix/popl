@@ -13,6 +13,8 @@
     of the MIT license.  See the LICENSE file for details.
 ***/
 
+/// checked with clang-tidy:
+/// run-clang-tidy-3.8.py -header-filter='.*' -checks='*,-misc-definitions-in-headers,-google-readability-braces-around-statements,-readability-braces-around-statements,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-google-build-using-namespace,-google-build-using-namespace'
 
 #ifndef POPL_HPP
 #define POPL_HPP
@@ -385,8 +387,8 @@ public:
 		missing_option
 	};
 
-	invalid_option(const Option* option, invalid_option::Error error, OptionName what_name, const std::string& value, const std::string& text) :
-		std::invalid_argument(text.c_str()), option_(option), error_(error), what_name_(what_name), value_(value)
+	invalid_option(const Option* option, invalid_option::Error error, OptionName what_name, std::string value, const std::string& text) :
+		std::invalid_argument(text.c_str()), option_(option), error_(error), what_name_(what_name), value_(std::move(value))
 	{
 	}
 
@@ -428,7 +430,7 @@ class HelpPrinter
 public:
 	/// Constructor
 	/// @param option_parser the OptionParser to create the help message from
-	HelpPrinter(const OptionParser* option_parser) : option_parser_(option_parser)
+	explicit HelpPrinter(const OptionParser* option_parser) : option_parser_(option_parser)
 	{
 	}
 
@@ -455,8 +457,8 @@ protected:
 class ConsoleHelpPrinter : public HelpPrinter
 {
 public:
-	ConsoleHelpPrinter(const OptionParser* option_parser);
-	virtual ~ConsoleHelpPrinter() = default;
+	explicit ConsoleHelpPrinter(const OptionParser* option_parser);
+	~ConsoleHelpPrinter() override = default;
 
 	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
 
@@ -474,8 +476,8 @@ private:
 class GroffHelpPrinter : public HelpPrinter
 {
 public:
-	GroffHelpPrinter(const OptionParser* option_parser);
-	virtual ~GroffHelpPrinter() = default;
+	explicit GroffHelpPrinter(const OptionParser* option_parser);
+	~GroffHelpPrinter() override = default;
 
 	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
 
@@ -493,8 +495,8 @@ private:
 class BashCompletionHelpPrinter : public HelpPrinter
 {
 public:
-	BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name);
-	virtual ~BashCompletionHelpPrinter() = default;
+	BashCompletionHelpPrinter(const OptionParser* option_parser, std::string program_name);
+	~BashCompletionHelpPrinter() override = default;
 
 	std::string help(const Attribute& max_attribute = Attribute::optional) const override;
 
@@ -539,10 +541,9 @@ inline std::string Option::name(OptionName what_name, bool with_hypen) const
 {
 	if (what_name == OptionName::short_name)
 		return short_name_.empty()?"":((with_hypen?"-":"") + short_name_);
-	else if (what_name == OptionName::long_name)
+	if (what_name == OptionName::long_name)
 		return long_name_.empty()?"":((with_hypen?"--":"") + long_name_);
-	else
-		return "";
+	return "";
 }
 
 
@@ -1070,7 +1071,7 @@ inline std::string ConsoleHelpPrinter::to_string(Option_ptr option) const
 
 inline std::string ConsoleHelpPrinter::help(const Attribute& max_attribute) const
 {
-	if (!option_parser_)
+	if (option_parser_ == nullptr)
 		return "";
 
 	if (max_attribute < Attribute::optional)
@@ -1162,7 +1163,7 @@ inline std::string GroffHelpPrinter::to_string(Option_ptr option) const
 
 inline std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
 {
-	if (!option_parser_)
+	if (option_parser_ == nullptr)
 		return "";
 
 	if (max_attribute < Attribute::optional)
@@ -1188,14 +1189,14 @@ inline std::string GroffHelpPrinter::help(const Attribute& max_attribute) const
 
 
 
-inline BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* option_parser, const std::string& program_name) : HelpPrinter(option_parser), program_name_(program_name)
+inline BashCompletionHelpPrinter::BashCompletionHelpPrinter(const OptionParser* option_parser, std::string program_name) : HelpPrinter(option_parser), program_name_(std::move(program_name))
 {
 }
 
 
 inline std::string BashCompletionHelpPrinter::help(const Attribute& /*max_attribute*/) const
 {
-	if (!option_parser_)
+	if (option_parser_ == nullptr)
 		return "";
 
 	std::stringstream s;
