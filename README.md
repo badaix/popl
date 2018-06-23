@@ -8,6 +8,7 @@ Program Options Parser Library
 popl is a C++ command line arguments parser that supports the same set of options as GNU's `getopt` and thus closely follows the POSIX guidelines for the command-line options of a program.
 
 ## Features
+
 * Single header file implementation. Simply include and use it!
 * No external dependencies, just C++11
 * Platform independent
@@ -17,14 +18,18 @@ popl is a C++ command line arguments parser that supports the same set of option
 * Easy to use: no strange braces syntax, but for each command line option one typesafe object 
 
 ## Howto
+
 Key object is `OptionParser`, which is populated with different option types:
+
 * `Value<T>` Option with argument  
 * `Switch` Option without argument  
 * `Implicit<T>` Option with optional argument (using an implicit value if no argument is given)  
 
 Next, OptionParser will parse the command line (by passing `argc` and `argv`) and fill the option objects.  
 Each option type is initialized with a short option, long option and a help message.  
+
 ### Basic usage example
+
 ```C++
 OptionParser op("Allowed options");
 auto help_option   = op.add<Switch>("h", "help", "produce help message");
@@ -38,8 +43,11 @@ if (help_option->is_set())
 cout << "string_option - is_set: " << string_option->is_set() << ", value: " << string_option->value() << "\n";
 cout << "implicit_int  - is_set: " << implicit_int->is_set() << ", value: " << implicit_int->value() << "\n";
 ```
+
 ### Multiple definition
+
 Options can be set multiple times on command line. Use `count()` and `value(n)` to access them:
+
 ```C++
 cout << "string_option - count: " << string_option->count() << "\n";
 if (string_option->is_set())
@@ -48,34 +56,43 @@ if (string_option->is_set())
 		cout << "string_option #" << n << " - value: " << string_option->value(n) << "\n";
 }
 ```
-  
+
 ### Default values
+
 Every option type can have a default value:
+
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "some string value", "default value");
 ```
+
 if not set on command line, `string_option->is_set()` will be `false` and `string_option->value()` will be `default value` 
   
 ### Assigning to a variable
+
 The argument of an option can be directly assigned to a variable:
+
 ```C++
 std::string s;
 /*auto string_option =*/ op.add<Value<std::string>>("s", "string", "some string value", "default value", &s);
 ```
+
 The variable `s` will carry the same value as `string_option.value()`, and thus the declaration of `string_option` can be omitted.  
   
 ### Visibility of an option
+
 Options have an `Attribute`: they can be hidden in the auto-created help message, or classified as "advanced", or "expert":
+
 ```C++
 auto string_option = op.add<Value<std::string>>("s", "string", "some string value");
 auto advanced_int  = op.add<Value<int>, Attribute::advanced>("i", "integer", "advanced integer value");
 auto hidden_bool   = op.add<Swtich, Attribute::hidden>("", "hidden", "hidden flag");
 ```
+
 Now `cout << op.help()` (same as `cout << op`) will not show the hidden or advanced option, while `cout << op.help(Visibility::advanced)` will show the advanced option. The hidden one is never shown to the user.  
 Also an option can be flagged as mandatory by assigning `Attribute::required`
 
-
 ## Example
+
 ```C++
 #include "popl.hpp"
 
@@ -141,9 +158,9 @@ int main(int argc, char **argv)
 }
 ```
 
-A call to `./popl -s hello -h -m23 test` will produce an output like this:
+A call to `popl -s hello -h -m23 test` will produce an output like this:
 
-```
+```shell
 Allowed options:
   -h, --help                   produce help message
   -v, --verbose                be verbose
@@ -166,45 +183,3 @@ imp_int_option  - is_set: 1, value: 23, reference: 23
 advanced_option - is_set: 0, count: 0
 expert_option   - is_set: 0, count: 0
 ```
-
-## Planned features
-
-- [ ] Support different output formatters for the help message
-  1. the current standard one
-  2. [troff](https://en.wikipedia.org/wiki/Troff) format for man-pages
- 
-    ```troff
-    .SS Allowed options:
-    .TP
-    \fB-h, --help\fR
-    produce help message
-    .TP
-    \fB-t, --test\fR
-    execute another test
-    .TP
-    \fB-f, --float arg (=1.23)\fR
-    test for float values
-    .TP
-    \fB-s, --string arg \fR
-    test for string values
-    .TP
-    \fB-m, --implicit [=arg(=42)]\fR
-    implicit test
-    ```
-  3. [Bash programmable completion](https://debian-administration.org/article/317/An_introduction_to_bash_completion_part_2)
-    ```shell
-    _foo() 
-    {
-        local cur prev opts
-        COMPREPLY=()
-        cur="${COMP_WORDS[COMP_CWORD]}"
-        prev="${COMP_WORDS[COMP_CWORD-1]}"
-        opts="-h --help -t --test -f --float -s --string -m --implicit"
-    
-        if [[ ${cur} == -* ]] ; then
-            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-            return 0
-        fi
-    }
-    complete -F _foo foo    
-    ```
