@@ -15,7 +15,10 @@ popl is a C++ command line arguments parser that supports the same set of option
 * Supports the same set of options as GNU's `getopt`: short options, long options, non-option arguments, ...
 * Templatized option parsing: arguments are directly casted into the desired target type
 * Automatic creation of a usage message
-* Easy to use: no strange braces syntax, but for each command line option one typesafe object 
+  * Console help message
+  * [Groff](https://www.gnu.org/software/groff/) formatted help message for use in man pages
+  * Script snippets for use in [bash completion](https://debian-administration.org/article/316/An_introduction_to_bash_completion_part_1) scripts
+* Easy to use: no strange braces syntax, but for each command line option one typesafe object
 
 ## Howto
 
