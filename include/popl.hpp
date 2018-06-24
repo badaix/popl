@@ -735,7 +735,7 @@ inline void Value<T>::parse(OptionName what_name, const char* value)
 
 
 template<class T>
-void Value<T>::update_reference()
+inline void Value<T>::update_reference()
 {
 	if (this->assign_to_)
 	{
