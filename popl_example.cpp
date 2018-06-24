@@ -22,6 +22,8 @@ int main(int argc, char **argv)
 
 	OptionParser op("Allowed options");
 	auto help_option     = op.add<Switch>("h", "help", "produce help message");
+	auto groff_option    = op.add<Switch>("", "groff", "produce groff formatted help message");
+	auto bash_option     = op.add<Switch>("", "bash", "produce bash completion script");
 	auto verbose_option  = op.add<Switch, Attribute::optional>("v", "verbose", "be verbose", &v);
 	auto hidden_option   = op.add<Switch, Attribute::hidden>("x", "", "hidden option");
 	auto double_option   = op.add<Value<double>>("d", "double", "test for double values", 3.14159265359);
@@ -46,6 +48,18 @@ int main(int argc, char **argv)
 			cout << op.help(Attribute::advanced) << "\n";
 		else if (help_option->count() > 2)
 			cout << op.help(Attribute::expert) << "\n";
+
+		if (groff_option->is_set())
+		{
+			GroffOptionPrinter option_printer(&op);
+			cout << option_printer.print();
+		}
+
+		if (bash_option->is_set())
+		{
+			BashCompletionOptionPrinter option_printer(&op, "popl_example");
+			cout << option_printer.print();
+		}
 
 		// show all non option arguments (those without "-o" or "--option")
 		for (const auto& non_option_arg: op.non_option_args())
@@ -93,8 +107,19 @@ int main(int argc, char **argv)
 			cerr << "too_many_arguments\n";
 		else if (e.error() == invalid_option::Error::missing_option)
 			cerr << "missing_option\n";
-		cerr << "option: " << e.option()->name(e.what_name()) << "\n";
-		cerr << "value:  " << e.value() << "\n";
+
+		if (e.error() == invalid_option::Error::missing_option)
+		{
+			string option_name(e.option()->name(OptionName::short_name, true));
+			if (option_name.empty())
+				option_name = e.option()->name(OptionName::long_name, true);
+			cerr << "option: " << option_name << "\n";
+		}
+		else
+		{
+			cerr << "option: " << e.option()->name(e.what_name()) << "\n";
+			cerr << "value:  " << e.value() << "\n";
+		}
 		return EXIT_FAILURE;
 	}
 	catch (const std::exception& e)
