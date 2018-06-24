@@ -20,7 +20,7 @@ option(BUILD_EXAMPLE "Build example (build popl_example demo)" ON)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(PROJECT_VERSION "1.1.0")
+set(PROJECT_VERSION "1.2.0")
 
 
 if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
