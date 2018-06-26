@@ -1,11 +1,11 @@
 language: cpp
-compiler:
-  - gcc
+dist: trusty
+sudo: false
+
 matrix:
   include:
     # build on ubuntu
     - os: linux
-      sudo: required
       addons:
         apt:
           sources:
@@ -52,9 +52,14 @@ matrix:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     # build on osx
     - os: osx
+      osx_image: xcode8
+
+    - os: osx
       osx_image: xcode9.1
+
 before_install:
     - eval "${MATRIX_EVAL}"
+
 script:
   - mkdir build
   - cd build
