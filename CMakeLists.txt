@@ -11,16 +11,23 @@
 
 cmake_minimum_required(VERSION 2.4) 
 
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+    endif ()
+else ()
+    set (CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(PROJECT_VERSION "1.2.0")
+endif ()
+
+
 project(popl_example)
 
 set(PROJECT_DESCRIPTION "Header-only C++ program options parser library")
 set(PROJECT_URL "https://github.com/badaix/popl")
 
 option(BUILD_EXAMPLE "Build example (build popl_example demo)" ON)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(PROJECT_VERSION "1.2.0")
 
 
 if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
