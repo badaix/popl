@@ -15,6 +15,9 @@ BIN = popl_example
 
 all:	$(TARGET)
 
+reformat:
+	clang-format -i include/popl.hpp
+
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $(BIN) $(OBJ) $(LDFLAGS)
 	strip $(BIN)
