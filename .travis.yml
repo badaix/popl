@@ -6,36 +6,43 @@ matrix:
   include:
     # build on ubuntu
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
+            - build-essential cmake
       env:
-        - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
 
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
+            - build-essential cmake
       env:
          - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
 
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
@@ -47,6 +54,7 @@ matrix:
 
     # works on Precise and Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
@@ -54,11 +62,13 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-3.6 && CXX=clang++-3.6"
 
     # works on Precise and Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
@@ -66,11 +76,13 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-3.7 && CXX=clang++-3.7"
 
     # works on Precise and Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
@@ -78,39 +90,46 @@ matrix:
             - llvm-toolchain-precise-3.8
           packages:
             - clang-3.8
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-3.8 && CXX=clang++-3.8"
 
     # works on Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - llvm-toolchain-trusty-3.9
           packages:
             - clang-3.9
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
 
     # works on Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - llvm-toolchain-trusty-4.0
           packages:
             - clang-4.0
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
 
     # works on Trusty
     - os: linux
+      sudo: required
       addons:
         apt:
           sources:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
+            - build-essential cmake
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
