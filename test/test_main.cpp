@@ -13,7 +13,7 @@
 using namespace popl;
 using namespace std;
 
-TEST_CASE("Main test")
+TEST_CASE("command line")
 {
     OptionParser op("Allowed options");
     std::vector<const char*> args = {"popl", "-h"};
@@ -34,3 +34,23 @@ TEST_CASE("Main test")
         cerr << "Exception: " << e.what() << "\n";
     }
 }
+
+
+TEST_CASE("config file")
+{
+    OptionParser op("Allowed options");
+    auto int_option = op.add<Value<int>>("i", "section.integer", "test for int value", 42);
+
+    try
+    {
+        op.parse("test.conf");
+        REQUIRE(int_option->is_set() == true);
+        REQUIRE(int_option->count() == 1);
+        REQUIRE(int_option->value() == 23);
+    }
+    catch (const std::exception& e)
+    {
+        cerr << "Exception: " << e.what() << "\n";
+    }
+}
+

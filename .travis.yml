@@ -130,4 +130,4 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake .. && make && ./example/popl_example && ./test/popl_test
+  - cmake .. && make && ./example/popl_example && cd test && ./popl_test
