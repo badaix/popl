@@ -712,6 +712,15 @@ inline void Value<std::string>::parse(OptionName what_name, const char* value)
 }
 
 
+template <>
+inline void Value<bool>::parse(OptionName /*what_name*/, const char* value)
+{
+    bool val =
+        ((value != nullptr) && ((strcmp(value, "1") == 0) || (strcmp(value, "true") == 0) || (strcmp(value, "True") == 0) || (strcmp(value, "TRUE") == 0)));
+    add_value(val);
+}
+
+
 template <class T>
 inline void Value<T>::parse(OptionName what_name, const char* value)
 {
@@ -810,11 +819,9 @@ inline Switch::Switch(const std::string& short_name, const std::string& long_nam
 }
 
 
-inline void Switch::parse(OptionName /*what_name*/, const char* value)
+inline void Switch::parse(OptionName /*what_name*/, const char* /*value*/)
 {
-    bool val = (value == nullptr || strlen(value) == 0 || strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "True") == 0 ||
-                strcmp(value, "TRUE") == 0);
-    add_value(val);
+    add_value(true);
 }
 
 
@@ -931,8 +938,8 @@ inline void OptionParser::parse(const std::string& ini_filename)
     std::string line;
 
     auto trim = [](std::string& s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) { return !std::isspace(ch); }));
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
         return s;
     };
 
@@ -956,7 +963,7 @@ inline void OptionParser::parse(const std::string& ini_filename)
             continue;
         if (line.front() == '#')
             continue;
-        std::cout << " line: " << line << "\n";
+
         if ((line.front() == '[') && (line.back() == ']'))
         {
             section = trim_copy(line.substr(1, line.size() - 2));
@@ -967,7 +974,6 @@ inline void OptionParser::parse(const std::string& ini_filename)
             continue;
 
         std::string key = section.empty() ? key_value.first : section + "." + key_value.first;
-        std::cout << "key: " << key << ", value: " << key_value.second << ", section: " << section << "\n";
         Option_ptr option = find_option(key);
         if (option && (option->attribute() == Attribute::inactive))
             option = nullptr;
