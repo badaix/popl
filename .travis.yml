@@ -130,4 +130,4 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake .. && make && ./example/popl_example && cd test && ./popl_test
+  - cmake -DCMAKE_CXX_FLAGS="$CXXFLAGS -Werror -Wall -Wextra -pedantic -Wno-unused-function -O2" .. && make && ./example/popl_example && cd test && ./popl_test
