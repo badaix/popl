@@ -10,7 +10,7 @@ SHELL = /bin/bash
 CXX      = /usr/bin/g++
 CXXFLAGS = -Wall -O3 -std=c++11 -Iinclude -pedantic -Wextra -Wshadow -Wconversion
 
-OBJ = popl_example.o
+OBJ = example/popl_example.o
 BIN = popl_example
 
 all:	$(TARGET)
