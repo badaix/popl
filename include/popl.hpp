@@ -297,6 +297,41 @@ protected:
 
 
 
+/// Bounded value option
+/**
+ * Bounded value option
+ * Checks if the value meets boundary predicate,
+ * for example ( x > 3 && x < 99 )
+ */
+template <class T>
+class BoundedValue : public Value<T>
+{
+public:
+    using Predicate = bool(*)(T);
+
+    /// Construct a BoundedValue Option
+    /// @param short_name the option's short name. Must be empty or one character.
+    /// @param long_name the option's long name. Can be empty.
+    /// @param description the Option's description that will be shown in the help message
+    /// @param predicate the option's correctness predicate, returns true if option is correct
+    BoundedValue(const std::string& short_name, const std::string& long_name, const std::string& description, Predicate predicate);
+
+    /// Construct a BoundedValue Option
+    /// @param short_name the option's short name. Must be empty or one character.
+    /// @param long_name the option's long name. Can be empty.
+    /// @param description the Option's description that will be shown in the help message
+    /// @param predicate the option's correctness predicate, returns true if option is correct
+    /// @param default_val the Option's default value
+    /// @param assign_to pointer to a variable to assign the parsed command line value to
+    BoundedValue(const std::string& short_name, const std::string& long_name, const std::string& description, Predicate predicate, const T& default_val, T* assign_to = nullptr);
+
+protected:
+    void parse(OptionName what_name, const char* value) override;
+
+private:
+    Predicate predicate_;
+};
+
 using Option_ptr = std::shared_ptr<Option>;
 
 /// OptionParser manages all Options
@@ -394,6 +429,7 @@ public:
         missing_argument,
         invalid_argument,
         too_many_arguments,
+        argument_out_of_bound,
         missing_option
     };
 
@@ -830,7 +866,31 @@ inline Argument Switch::argument_type() const
     return Argument::no;
 }
 
+/// BoundedValue implementation /////////////////////////////////
 
+template <class T>
+BoundedValue<T>::BoundedValue(const std::string& short_name, const std::string& long_name, const std::string& description, Predicate predicate)
+    : Value<T>(short_name, long_name, description), predicate_(predicate)
+{
+
+}
+
+template <class T>
+BoundedValue<T>::BoundedValue(const std::string& short_name, const std::string& long_name, const std::string& description, Predicate predicate, const T& default_val, T* assign_to)
+    : Value<T>(short_name, long_name, description, default_val, assign_to), predicate_(predicate)
+{
+
+}  
+
+template <class T>
+inline void BoundedValue<T>::parse(OptionName what_name, const char* value)
+{
+    Value<T>::parse(what_name, value);
+    for ( const auto& v : this->values_)
+        if ( !predicate_( v))
+            throw invalid_option(this, invalid_option::Error::argument_out_of_bound, what_name, value,
+                                 "argument is out of bound for " + this->name(what_name, true) + ": '" + value + "'");
+}
 
 /// OptionParser implementation /////////////////////////////////
 
