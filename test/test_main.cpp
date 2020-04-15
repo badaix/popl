@@ -35,6 +35,28 @@ TEST_CASE("command line")
     }
 }
 
+TEST_CASE("wrong predicated option")
+{
+    OptionParser op("Allowed options");
+    std::vector<const char*> args = {"popl", "-i", "9"};
+
+    auto int_option = op.add<BoundedValue<int>>("i", "int", "test for int value, should be divisible by 8", [](int x){ return x % 8 == 0; }, 64);
+
+    CHECK_THROWS_AS(op.parse(args.size(), args.data()), invalid_option);    
+}
+
+TEST_CASE("correct predicated option")
+{
+    OptionParser op("Allowed options");
+    std::vector<const char*> args = {"popl", "-i", "64"};
+
+    auto int_option = op.add<BoundedValue<int>>("i", "int", "test for int value, should be divisible by 8", [](int x){ return x % 8 == 0; }, 9);
+
+    op.parse(args.size(), args.data());
+    REQUIRE(int_option->is_set() == true);
+    REQUIRE(int_option->count() == 1);
+    REQUIRE(int_option->value() == 64);
+}
 
 TEST_CASE("config file")
 {
