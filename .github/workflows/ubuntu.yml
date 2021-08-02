@@ -1,0 +1,18 @@
+name: Ubuntu-amd64
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: cmake build
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    - name: cmake make
+      run: cmake --build build --parallel 3
+    - name: test
+      run: |
+        cd build/test
+        ./popl_test

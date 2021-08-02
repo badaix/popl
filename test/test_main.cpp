@@ -23,7 +23,7 @@ TEST_CASE("command line")
 
     try
     {
-        op.parse(args.size(), args.data());
+        op.parse(static_cast<int>(args.size()), args.data());
         REQUIRE(help_option->count() == 1);
         REQUIRE(int_option->is_set() == false);
         REQUIRE(int_option->count() == 0);
