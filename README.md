@@ -14,6 +14,7 @@ popl is a C++ command line arguments parser that supports the same set of option
 * No external dependencies, just C++11
 * Platform independent
 * Supports the same set of options as GNU's `getopt`: short options, long options, non-option arguments, ...
+* Supports parsing of `ini` files
 * Templatized option parsing: arguments are directly casted into the desired target type
 * Automatic creation of a usage message
   * Console help message
