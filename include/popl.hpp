@@ -380,6 +380,16 @@ public:
     template <typename T>
     std::shared_ptr<T> get_option(char short_name) const;
 
+    /// Check if an option is set by it's long name
+    /// @param the Option's long name
+    /// @return true if set at least once
+    bool is_set(const std::string& long_name) const;
+
+    /// Check if an option is set by it's short name
+    /// @param the Option's long name
+    /// @return true if set at least once
+    bool is_set(char short_name) const;
+
 protected:
     std::vector<Option_ptr> options_;
     std::string description_;
@@ -938,6 +948,26 @@ inline std::shared_ptr<T> OptionParser::get_option(char short_name) const
     if (!result)
         throw std::invalid_argument("cannot cast option to T: " + std::string(1, short_name));
     return result;
+}
+
+bool OptionParser::is_set(const std::string& long_name) const
+{
+    Option_ptr option = find_option(long_name);
+    if (option && option->is_set())
+    {
+        return true;
+    }
+    return false;
+}
+	
+bool OptionParser::is_set(char short_name) const
+{
+    Option_ptr option = find_option(short_name);
+    if (option && option->is_set())
+    {
+        return true;
+    }
+    return false;
 }
 
 inline void OptionParser::parse(const std::string& ini_filename)
