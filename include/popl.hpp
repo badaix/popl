@@ -339,7 +339,8 @@ public:
     /// Parse the command line into the added Options
     /// @param argc command line argument count
     /// @param argv command line arguments
-    void parse(int argc, const char* const argv[]);
+    /// @param start_index index of starting argument
+    void parse(int argc, const char * const argv[], int start_index = 1);
 
     /// Delete all parsed options
     void reset();
@@ -993,9 +994,9 @@ inline void OptionParser::parse(const std::string& ini_filename)
     }
 }
 
-inline void OptionParser::parse(int argc, const char* const argv[])
+inline void OptionParser::parse(int argc, const char* const argv[], int start_index)
 {
-    for (int n = 1; n < argc; ++n)
+    for (int n = start_index; n < argc; ++n)
     {
         const std::string arg(argv[n]);
         if (arg == "--")

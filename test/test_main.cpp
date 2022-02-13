@@ -54,3 +54,17 @@ TEST_CASE("config file")
     }
 }
 
+TEST_CASE("start index")
+{
+    OptionParser op("Allowed options");
+    auto help_option = op.add<Switch>("h", "help", "produce help message");
+    auto int_option = op.add<Value<int>>("i", "int", "test for int value", 42);
+    std::vector<const char*> args = {"popl", "-h", "--", "-i", "43"};
+
+    op.parse(args.size(), args.data(), 3);
+    REQUIRE(help_option->count() == 0);
+    REQUIRE(int_option->is_set());
+    REQUIRE(int_option->count() == 1);
+    REQUIRE(int_option->value() == 43);
+}
+
