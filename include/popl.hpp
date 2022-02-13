@@ -1169,6 +1169,7 @@ inline std::string OptionParser::help(const Attribute& max_attribute) const
 }
 
 
+
 /// ConsoleOptionPrinter implementation /////////////////////////////////
 
 inline ConsoleOptionPrinter::ConsoleOptionPrinter(const OptionParser* option_parser) : OptionPrinter(option_parser)
