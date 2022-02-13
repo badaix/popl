@@ -959,11 +959,7 @@ bool OptionParser::is_set(const std::string& long_name) const
 bool OptionParser::is_set(char short_name) const
 {
     Option_ptr option = find_option(short_name);
-    if (option && option->is_set())
-    {
-        return true;
-    }
-    return false;
+    return option && option->is_set();
 }
 
 inline void OptionParser::parse(const std::string& ini_filename)
