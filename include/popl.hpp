@@ -953,11 +953,7 @@ inline std::shared_ptr<T> OptionParser::get_option(char short_name) const
 bool OptionParser::is_set(const std::string& long_name) const
 {
     Option_ptr option = find_option(long_name);
-    if (option && option->is_set())
-    {
-        return true;
-    }
-    return false;
+    return option && option->is_set();
 }
 	
 bool OptionParser::is_set(char short_name) const
