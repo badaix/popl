@@ -3,11 +3,11 @@
     (  _ \ /  \(  _ \(  )
      ) __/(  O )) __// (_/\
     (__)   \__/(__)  \____/
-    version 1.2.90
+    version 1.3.0
     https://github.com/badaix/popl
 
     This file is part of popl (program options parser lib)
-    Copyright (C) 2015-2019 Johannes Pohl
+    Copyright (C) 2015-2021 Johannes Pohl
 
     This software may be modified and distributed under the terms
     of the MIT license.  See the LICENSE file for details.
@@ -33,12 +33,15 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#ifdef WINDOWS
+#include <cctype>
+#endif
 
 
 namespace popl
 {
 
-#define POPL_VERSION "1.2.90"
+#define POPL_VERSION "1.3.0"
 
 
 /// Option's argument type
@@ -295,8 +298,6 @@ protected:
     void parse(OptionName what_name, const char* value) override;
 };
 
-
-
 /// Bounded value option
 /**
  * Bounded value option
@@ -372,6 +373,9 @@ public:
     /// @param argc command line argument count
     /// @param argv command line arguments
     void parse(int argc, const char* const argv[]);
+
+    /// Delete all parsed options
+    void reset();
 
     /// Produce a help message
     /// @param max_attribute show options up to this level (optional, advanced, expert)
@@ -797,8 +801,10 @@ inline void Value<T>::update_reference()
 {
     if (this->assign_to_)
     {
-        if (this->is_set() || default_)
-            *this->assign_to_ = value();
+        if (!this->is_set() && default_)
+            *this->assign_to_ = *default_;
+        else if (this->is_set())
+            *this->assign_to_ = values_.back();
     }
 }
 
@@ -1037,8 +1043,6 @@ inline void OptionParser::parse(const std::string& ini_filename)
         Option_ptr option = find_option(key);
         if (option && (option->attribute() == Attribute::inactive))
             option = nullptr;
-        // if (option && (option->argument_type() != Argument::required))
-        //    option = nullptr;
 
         if (option)
             option->parse(OptionName::long_name, key_value.second.c_str());
@@ -1049,11 +1053,6 @@ inline void OptionParser::parse(const std::string& ini_filename)
 
 inline void OptionParser::parse(int argc, const char* const argv[])
 {
-    unknown_options_.clear();
-    non_option_args_.clear();
-    for (auto& opt : options_)
-        opt->clear();
-
     for (int n = 1; n < argc; ++n)
     {
         const std::string arg(argv[n]);
@@ -1154,12 +1153,20 @@ inline void OptionParser::parse(int argc, const char* const argv[])
 }
 
 
+inline void OptionParser::reset()
+{
+    unknown_options_.clear();
+    non_option_args_.clear();
+    for (auto& opt : options_)
+        opt->clear();
+}
+
+
 inline std::string OptionParser::help(const Attribute& max_attribute) const
 {
     ConsoleOptionPrinter option_printer(this);
     return option_printer.print(max_attribute);
 }
-
 
 
 /// ConsoleOptionPrinter implementation /////////////////////////////////

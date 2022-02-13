@@ -1,0 +1,20 @@
+name: Windows-win64
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: cmake build
+      run: cmake -S . -B build
+    - name: cmake make
+      run: cmake --build build --parallel 3
+    - name: test
+      run: |
+        cd D:\a\popl\popl\build\test
+        dir
+        pwd
+        .\Debug\popl_test.exe

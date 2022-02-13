@@ -4,7 +4,7 @@
 # (__)   \__/(__)  \____/
 
 # This file is part of popl (program options parser lib)
-# Copyright (C) 2015-2019 Johannes Pohl
+# Copyright (C) 2015-2021 Johannes Pohl
 
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
@@ -18,7 +18,7 @@ if (CMAKE_VERSION VERSION_LESS "3.1")
 else ()
     set (CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_EXTENSIONS OFF)
-    set(PROJECT_VERSION "1.2.90")
+    set(PROJECT_VERSION "1.3.0")
 endif ()
 
 
