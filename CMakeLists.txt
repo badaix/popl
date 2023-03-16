@@ -27,8 +27,8 @@ project(popl_example)
 set(PROJECT_DESCRIPTION "Header-only C++ program options parser library")
 set(PROJECT_URL "https://github.com/badaix/popl")
 
-option(BUILD_EXAMPLE "Build example (build popl_example demo)" ON)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_EXAMPLE "Build example (build popl_example demo)" OFF)
+option(BUILD_TESTS "Build tests" OFF)
 
 
 if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
